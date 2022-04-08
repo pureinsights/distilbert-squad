@@ -2,8 +2,7 @@ import json
 from os import environ
 from pathlib import Path
 
-from transformers import (AutoTokenizer, AutoModelForQuestionAnswering, pipeline)
-
+from transformers import (AutoTokenizer, AutoModelForQuestionAnswering, AutoModelForSeq2SeqLM, pipeline)
 from download import download_model
 
 
@@ -93,3 +92,12 @@ class Model:
             answers = [answers]
 
         return answers
+
+    def summarize(self, text):
+        tokenizer = AutoTokenizer.from_pretrained("google/pegasus-xsum")
+
+        model = AutoModelForSeq2SeqLM.from_pretrained("google/pegasus-xsum")
+        summarizer = pipeline("summarization", model=model, tokenizer=tokenizer)
+        summary = summarizer(text)
+
+        return summary

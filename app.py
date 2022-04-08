@@ -68,6 +68,25 @@ def predict():
                     mimetype='application/json')
 
 
+@app.route('/summarize', methods=['POST'])
+def summarize():
+    """
+    Predicts an answer given some chunks of text.
+    @return: Response in JSON format.
+    """
+    body = request.get_json()
+
+    if not body:
+        return error_message('Missing input body', 400)
+
+    text = str(body['text'])
+    summary = model.summarize(text)
+    summaryObj = {}
+    summaryObj['summary'] = summary
+    return Response(json.dumps(summaryObj),
+                    mimetype='application/json')
+
+
 def highlight(text, answer, style):
     """
     Highlights the answer in the given text
@@ -97,4 +116,4 @@ def error_message(message, status):
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
+    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8071)))
