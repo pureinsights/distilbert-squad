@@ -66,7 +66,7 @@ class Model:
         # If an environment variable with MODEL_PATH has been set, then use it.
         path = environ[PATH_ENV_VARIABLE] if environ.get(PATH_ENV_VARIABLE) is not None else path
         '''
-        Device ordinal for CPU/GPU supports. 
+        Device ordinal for CPU/GPU support. 
         Setting this to -1 will leverage CPU, >=0 will run the model on the associated CUDA device id.
         See https://huggingface.co/transformers/v3.0.2/main_classes/pipelines.html
         '''
