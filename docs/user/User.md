@@ -153,9 +153,8 @@ Sample Result:
 
 ```json
 {
-  "message": "MLM Training finished, model saved at: 'C:\\Users\\AdrianaMorales\\Desktop\\test'",
-  "added_tokens": [...],
-  "timestamp": "2022-04-22T08:54:17.050676"
+    "message": "Training started",
+    "timestamp": "2022-05-12T12:05:49.651371"
 }
 ```
 

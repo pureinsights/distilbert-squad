@@ -7,6 +7,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 from transformers import AutoModelForMaskedLM, AutoTokenizer, TrainingArguments, Trainer
 
+from threading import Thread
+
 import spacy
 import numpy as np
 import torch
@@ -46,7 +48,7 @@ def status():
     @return: JSON response with a boolean indicating if a training is in progress.
     """
     return Response(json.dumps({
-            'training_status': is_training,
+        'training_status': is_training,
     }), 200, mimetype='application/json')
 
 
@@ -70,48 +72,20 @@ def train_vocab():
     if body['data'] is None:
         return error_message('Missing information in parameter data', 400)
 
+    data = body['data']
+    output_path = str(body['output_path'])
+    model_name = str(body['model'])
+    batch_size = body['batch_training'] if 'batch_training' in body else default_batch
+
     global is_training
     is_training = True
-    response = []
 
-    try:
+    Thread(target=start_train, args=(model_name, output_path, batch_size, data,)).start()
 
-        data = body['data']
-        output_path = str(body['output_path'])
-        model_name = str(body['model'])
-
-        tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
-        device = "cuda:0" if torch.cuda.is_available() else "cpu"
-        batch_size = body['batch_training'] if 'batch_training' in body else default_batch
-
-        loaded_model = AutoModelForMaskedLM.from_pretrained(model_name)
-        loaded_model = loaded_model.to(device)
-
-        global nlp
-        nlp = spacy.load("en_core_web_sm", exclude=['morphologizer', 'parser', 'ner', 'attribute_ruler', 'lemmatizer'])
-
-        different_tokens_list = get_new_tokens(data, tokenizer)
-        new_tokens = [k for k, v in different_tokens_list]
-
-        tokenizer.add_tokens(new_tokens)
-        loaded_model.resize_token_embeddings(len(tokenizer))
-
-        tokenizer.save_pretrained(output_path)
-
-        train_mlm(data, loaded_model, tokenizer, output_path, batch_size)
-
-        response = Response(json.dumps({
-            'message': "MLM Training finished, model saved at: '" + output_path + "'",
-            'added_tokens': new_tokens,
-            'timestamp': datetime.datetime.now().isoformat()
-        }), 200, mimetype='application/json')
-
-    except Exception as e:
-        response = error_message(str(e), 500)
-
-    finally:
-        is_training = False
-        return response
+    return Response(json.dumps({
+        'message': "Training started",
+        'timestamp': datetime.datetime.now().isoformat()
+    }), 200, mimetype='application/json')
 
 
 @app.route('/predict', methods=['POST'])
@@ -191,6 +165,48 @@ class TrainDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return len(self.encodings.input_ids)
+
+
+def start_train(model_name, output_path, batch_size, data):
+
+    response = []
+
+    try:
+
+        tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
+
+        device = "cuda:0" if torch.cuda.is_available() else "cpu"
+
+        loaded_model = AutoModelForMaskedLM.from_pretrained(model_name)
+        loaded_model = loaded_model.to(device)
+
+        global nlp
+        nlp = spacy.load("en_core_web_sm", exclude=['morphologizer', 'parser', 'ner', 'attribute_ruler', 'lemmatizer'])
+
+        different_tokens_list = get_new_tokens(data, tokenizer)
+        new_tokens = [k for k, v in different_tokens_list]
+
+        tokenizer.add_tokens(new_tokens)
+        loaded_model.resize_token_embeddings(len(tokenizer))
+
+        tokenizer.save_pretrained(output_path)
+
+        train_mlm(data, loaded_model, tokenizer, output_path, batch_size)
+
+        response = Response(json.dumps({
+            'message': "MLM Training finished, model saved at: '" + output_path + "'",
+            'added_tokens': new_tokens,
+            'timestamp': datetime.datetime.now().isoformat()
+        }), 200, mimetype='application/json')
+
+    except Exception as e:
+        response = error_message(str(e), 500)
+
+    finally:
+
+        global is_training
+        is_training = False
+        return response
 
 
 def train_mlm(docs, loaded_model, tokenizer, output_path, batch_size):
