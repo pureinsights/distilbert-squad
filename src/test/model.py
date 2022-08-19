@@ -6,43 +6,41 @@ from transformers import pipelines
 
 path.insert(0, os.getcwd() + "/../")
 from src.main.model import download_models, load_models, Model
-
-model_root = "./models_test"
-model_name = 'sshleifer/tiny-distilbert-base-cased-distilled-squad'
+from constants import TINY_DISTILBERT_MODEL, MODEL_ROOT
 
 
 class TestModel(unittest.TestCase):
 
     def test_download_models(self):
-        model = [{"model": model_name}]
-        download_models(model, model_root)
+        model = [{"model": TINY_DISTILBERT_MODEL}]
+        download_models(model, MODEL_ROOT)
 
-        model_path = "{}/{}/".format(model_root, model_name)
+        model_path = "{}/{}/".format(MODEL_ROOT, TINY_DISTILBERT_MODEL)
         self.assertTrue(os.path.exists(model_path) and os.listdir(model_path))
-        shutil.rmtree(model_root)
+        shutil.rmtree(MODEL_ROOT)
 
     def test_load_models(self):
-        model = [{"model": model_name}]
-        download_models(model, model_root)
+        model = [{"model": TINY_DISTILBERT_MODEL}]
+        download_models(model, MODEL_ROOT)
 
-        pipelines_, default_pipeline = load_models(model_root, -1)
+        pipelines_, default_pipeline = load_models(MODEL_ROOT, -1)
 
         self.assertIsInstance(default_pipeline, pipelines.question_answering.QuestionAnsweringPipeline)
-        self.assertIsInstance(pipelines_[model_name], pipelines.question_answering.QuestionAnsweringPipeline)
-        shutil.rmtree(model_root)
+        self.assertIsInstance(pipelines_[TINY_DISTILBERT_MODEL], pipelines.question_answering.QuestionAnsweringPipeline)
+        shutil.rmtree(MODEL_ROOT)
 
     def test_model_get_pipeline(self):
-        model = [{"model": model_name}]
-        download_models(model, model_root)
+        model = [{"model": TINY_DISTILBERT_MODEL}]
+        download_models(model, MODEL_ROOT)
 
-        model_class = Model(model_root)
-        self.assertIsInstance(model_class.get_pipeline(model_name),
+        model_class = Model(MODEL_ROOT)
+        self.assertIsInstance(model_class.get_pipeline(TINY_DISTILBERT_MODEL),
                               pipelines.question_answering.QuestionAnsweringPipeline)
-        shutil.rmtree(model_root)
+        shutil.rmtree(MODEL_ROOT)
 
     def test_model_predict(self):
         model = [{"model": 'deepset/roberta-base-squad2'}]
-        download_models(model, model_root)
+        download_models(model, MODEL_ROOT)
 
         texts = ['The FA Cup is open to any eligible club down to Level 10 of the English football league system – 20 '
                  'professional clubs in the Premier League (level 1),72 professional clubs in the English Football '
@@ -66,9 +64,9 @@ class TestModel(unittest.TestCase):
         answer = [{'score': 0.6043325066566467, 'start': 693, 'end': 708, 'answer': 'six to fourteen'},
                   {'score': 0.0016566978301852942, 'start': 64, 'end': 66, 'answer': '32'}]
 
-        model_class = Model(model_root)
+        model_class = Model(MODEL_ROOT)
         self.assertEqual(model_class.predict(texts, question, 'deepset/roberta-base-squad2'), answer)
-        shutil.rmtree(model_root)
+        shutil.rmtree(MODEL_ROOT)
 
 
 if __name__ == '__main__':

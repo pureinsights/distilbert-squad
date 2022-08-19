@@ -13,15 +13,15 @@ path.insert(0, os.getcwd() + "/../")
 import src.main.huggingface as huggingface
 import src.main.model as model
 
+from constants import MODELS, MODEL_ROOT, MODEL_ROOT_TRAINED, TINY_DISTILBERT_MODEL, \
+    PREDICT_ENDPOINT, CONTENTTYPE, DATA_TEST, TRAIN_ENDPOINT
+
 from transformers import AutoModelForMaskedLM, AutoTokenizer
 
 app = Flask(__name__)
 app.register_blueprint(huggingface.huggingface_api)
 
-models = [{"model": 'deepset/roberta-base-squad2'}]
-model_root = "./models_test"
-
-model.download_models(models, model_root)
+model.download_models(MODELS, MODEL_ROOT)
 
 
 class TestEndpoint(unittest.TestCase):
@@ -33,13 +33,13 @@ class TestEndpoint(unittest.TestCase):
         tester = app.test_client()
 
     def setUp(self):
-        huggingface.model = model.Model(model_root)
+        huggingface.model = model.Model(MODEL_ROOT)
 
     @mock.patch('huggingface.input')
     def test_models(self, mock_input):
         response = tester.get(
             '/models',
-            content_type='application/json'
+            content_type=CONTENTTYPE
         )
 
         data = response.get_data(as_text=True)
@@ -49,7 +49,7 @@ class TestEndpoint(unittest.TestCase):
     @mock.patch('huggingface.input')
     def test_predict(self, mock_input):
         body = {
-            "model": "sshleifer/tiny-distilbert-base-cased-distilled-squad",
+            "model": TINY_DISTILBERT_MODEL,
             "question": "How many games are required to win the FA Cup?",
             "chunks": [
                 {
@@ -85,8 +85,8 @@ class TestEndpoint(unittest.TestCase):
                  '\\\"giant-killing\\\" victory."}]'
 
         response = tester.post(
-            '/predict',
-            content_type='application/json',
+            PREDICT_ENDPOINT,
+            content_type=CONTENTTYPE,
             json=body
         )
 
@@ -96,7 +96,7 @@ class TestEndpoint(unittest.TestCase):
 
     def test_predict_error_message(self):
         body_no_question = {
-            "model": "sshleifer/tiny-distilbert-base-cased-distilled-squad",
+            "model": TINY_DISTILBERT_MODEL,
             "chunks": [
                 {
                     "text": "The FA Cup is open to any eligible club down to Level 10 of the English football league system – 20 professional clubs in the Premier League (level 1),72 professional clubs in the English Football League (levels 2 to 4), and several hundred non-League teams in steps 1 to 6 of the National League System (levels 5 to 10). A record 763 clubs competed in 2011–12. The tournament consists of 12 randomly drawn rounds followed by the semi-finals and the final. Entrants are not seeded, although a system of byes based on league level ensures higher ranked teams enter in later rounds.  The minimum number of games needed to win, depending on which round a team enters the competition, ranges from six to fourteen.",
@@ -110,21 +110,21 @@ class TestEndpoint(unittest.TestCase):
         }
 
         body_no_chunks = {
-            "model": "sshleifer/tiny-distilbert-base-cased-distilled-squad",
+            "model": TINY_DISTILBERT_MODEL,
             "question": "How many games are required to win the FA Cup?"
         }
 
         response = tester.post(
-            '/predict',
-            content_type='application/json',
+            PREDICT_ENDPOINT,
+            content_type=CONTENTTYPE,
             json=None
         )
 
         self.assertEqual(response.status_code, 400)
 
         response = tester.post(
-            '/predict',
-            content_type='application/json',
+            PREDICT_ENDPOINT,
+            content_type=CONTENTTYPE,
             json=body_no_question
         )
 
@@ -133,8 +133,8 @@ class TestEndpoint(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
 
         response = tester.post(
-            '/predict',
-            content_type='application/json',
+            PREDICT_ENDPOINT,
+            content_type=CONTENTTYPE,
             json=body_no_chunks
         )
 
@@ -145,7 +145,7 @@ class TestEndpoint(unittest.TestCase):
     def test_status_with_no_train(self):
         response = tester.get(
             '/status',
-            content_type='application/json'
+            content_type=CONTENTTYPE
         )
 
         data = response.get_data(as_text=True)
@@ -154,18 +154,15 @@ class TestEndpoint(unittest.TestCase):
 
     def test_train(self):
         body = {
-            "output_path": "./models_test/trained/",
+            "output_path": MODEL_ROOT_TRAINED,
             "model": "bert-base-uncased",
-            "data": [
-                "Ground spice commonly used in Indian cooking and drinks, in Middle Eastern cooking and in Scandinavian baking",
-                "Alcoholic beverage produced by fermentation of grape juice produced from the chardonnay grape, with little contact with grape skins so that the wine is pale yellow in colour with little sugars remaining. Includes wine produced in Australia. Approximately 13% v/v alcohol."
-            ],
+            "data": DATA_TEST,
             "batch_training": 2
         }
 
         response = tester.post(
-            '/train',
-            content_type='application/json',
+            TRAIN_ENDPOINT,
+            content_type=CONTENTTYPE,
             json=body
         )
 
@@ -176,46 +173,40 @@ class TestEndpoint(unittest.TestCase):
     def test_train_error_message(self):
         body_no_output_path = {
             "model": "bert-base-uncased",
-            "data": [
-                "Ground spice commonly used in Indian cooking and drinks, in Middle Eastern cooking and in Scandinavian baking",
-                "Alcoholic beverage produced by fermentation of grape juice produced from the chardonnay grape, with little contact with grape skins so that the wine is pale yellow in colour with little sugars remaining. Includes wine produced in Australia. Approximately 13% v/v alcohol."
-            ],
+            "data": DATA_TEST,
             "batch_training": 2
         }
 
         body_no_model = {
-            "output_path": "./models_test/trained/",
-            "data": [
-                "Ground spice commonly used in Indian cooking and drinks, in Middle Eastern cooking and in Scandinavian baking",
-                "Alcoholic beverage produced by fermentation of grape juice produced from the chardonnay grape, with little contact with grape skins so that the wine is pale yellow in colour with little sugars remaining. Includes wine produced in Australia. Approximately 13% v/v alcohol."
-            ],
+            "output_path": MODEL_ROOT_TRAINED,
+            "data": DATA_TEST,
             "batch_training": 2
         }
 
         body_no_data = {
-            "output_path": "./models_test/trained/",
+            "output_path": MODEL_ROOT_TRAINED,
             "model": "bert-base-uncased",
             "batch_training": 2
         }
 
         body_data_empty = {
-            "output_path": "./models_test/trained/",
+            "output_path": MODEL_ROOT_TRAINED,
             "model": "bert-base-uncased",
             "data": None,
             "batch_training": 2
         }
 
         response = tester.post(
-            '/train',
-            content_type='application/json',
+            TRAIN_ENDPOINT,
+            content_type=CONTENTTYPE,
             json=None
         )
 
         self.assertEqual(response.status_code, 400)
 
         response = tester.post(
-            '/train',
-            content_type='application/json',
+            TRAIN_ENDPOINT,
+            content_type=CONTENTTYPE,
             json=body_no_output_path
         )
 
@@ -224,8 +215,8 @@ class TestEndpoint(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
 
         response = tester.post(
-            '/train',
-            content_type='application/json',
+            TRAIN_ENDPOINT,
+            content_type=CONTENTTYPE,
             json=body_no_model
         )
 
@@ -234,8 +225,8 @@ class TestEndpoint(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
 
         response = tester.post(
-            '/train',
-            content_type='application/json',
+            TRAIN_ENDPOINT,
+            content_type=CONTENTTYPE,
             json=body_no_data
         )
 
@@ -244,8 +235,8 @@ class TestEndpoint(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
 
         response = tester.post(
-            '/train',
-            content_type='application/json',
+            TRAIN_ENDPOINT,
+            content_type=CONTENTTYPE,
             json=body_data_empty
         )
 
@@ -255,7 +246,7 @@ class TestEndpoint(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        shutil.rmtree(model_root)
+        shutil.rmtree(MODEL_ROOT)
 
 
 class TestEndpointFunctions(unittest.TestCase):
@@ -298,33 +289,25 @@ class TestEndpointFunctions(unittest.TestCase):
 
     def test_start_train(self):
         model_name = "bert-base-uncased"
-        output_path = "./models_test/trained/"
+        output_path = MODEL_ROOT_TRAINED
         batch_size = 2
-        data = [
-            "Ground spice commonly used in Indian cooking and drinks, in Middle Eastern cooking and in Scandinavian baking",
-            "Alcoholic beverage produced by fermentation of grape juice produced from the chardonnay grape, with little contact with grape skins so that the wine is pale yellow in colour with little sugars remaining. Includes wine produced in Australia. Approximately 13% v/v alcohol."
-        ]
 
         answer = {"message": "MLM Training finished, model saved at: './models_test/trained/'",
                   "added_tokens": ["Alcoholic", "Approximately", "Australia", "Eastern", "Ground", "Includes", "Indian",
                                    "Middle", "Scandinavian", "chardonnay", "fermentation", "sugars"]}
 
-        response = huggingface.start_train(model_name, output_path, batch_size, data)
+        response = huggingface.start_train(model_name, output_path, batch_size, DATA_TEST)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.get_data(as_text=True))
         del data["timestamp"]
         self.assertEqual(data, answer)
-        self.assertTrue(os.path.exists("./models_test/trained") and os.listdir("./models_test/trained"))
+        self.assertTrue(os.path.exists(MODEL_ROOT_TRAINED) and os.listdir(MODEL_ROOT_TRAINED))
 
-        shutil.rmtree("./models_test/trained")
+        shutil.rmtree(MODEL_ROOT_TRAINED)
 
     def test_train_mlm(self):
-        docs = [
-            "Ground spice commonly used in Indian cooking and drinks, in Middle Eastern cooking and in Scandinavian baking",
-            "Alcoholic beverage produced by fermentation of grape juice produced from the chardonnay grape, with little contact with grape skins so that the wine is pale yellow in colour with little sugars remaining. Includes wine produced in Australia. Approximately 13% v/v alcohol."
-        ]
         model_name = "bert-base-uncased"
-        output_path = "./models_test/trained/"
+        output_path = MODEL_ROOT_TRAINED
 
         tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
         tokenizer.add_tokens(
@@ -337,18 +320,13 @@ class TestEndpointFunctions(unittest.TestCase):
 
         tokenizer.save_pretrained(output_path)
 
-        huggingface.train_mlm(docs, loaded_model, tokenizer, output_path, 2)
+        huggingface.train_mlm(DATA_TEST, loaded_model, tokenizer, output_path, 2)
 
         self.assertTrue(os.path.exists(output_path) and os.listdir(output_path))
         shutil.rmtree(output_path)
 
     @mock.patch('huggingface.input')
     def test_get_new_tokens(self, mock_input):
-        data = [
-            "Ground spice commonly used in Indian cooking and drinks, in Middle Eastern cooking and in Scandinavian baking",
-            "Alcoholic beverage produced by fermentation of grape juice produced from the chardonnay grape, with little contact with grape skins so that the wine is pale yellow in colour with little sugars remaining. Includes wine produced in Australia. Approximately 13% v/v alcohol."
-        ]
-
         answer = [('Alcoholic', 1), ('Approximately', 2), ('Australia', 3), ('Eastern', 4), ('Ground', 5),
                   ('Includes', 6), ('Indian', 7), ('Middle', 8), ('Scandinavian', 9), ('chardonnay', 13),
                   ('fermentation', 19), ('sugars', 28)]
@@ -356,7 +334,7 @@ class TestEndpointFunctions(unittest.TestCase):
         model_name = "bert-base-uncased"
 
         tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
-        different_tokens_list = huggingface.get_new_tokens(data, tokenizer)
+        different_tokens_list = huggingface.get_new_tokens(DATA_TEST, tokenizer)
 
         self.assertEqual(different_tokens_list, answer)
 
@@ -398,7 +376,7 @@ class TestEndpointFunctions(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        shutil.rmtree(model_root)
+        shutil.rmtree(MODEL_ROOT)
 
 
 if __name__ == '__main__':

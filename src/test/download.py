@@ -5,24 +5,22 @@ import os
 
 path.insert(0, os.getcwd() + "/../")
 from src.main.download import download_model, download_from_huggingface
-
-model_root = "./models_test"
-model_name = 'prajjwal1/bert-tiny'
+from constants import MODEL_ROOT, BERT_TINY_MODEL
 
 
 class TestDownload(unittest.TestCase):
 
     def test_download_model(self):
-        model = {"model": model_name}
-        current_path = download_model(model_root, model)
-        self.assertEqual(current_path, model_root + "/" + model_name + "/")
-        shutil.rmtree(model_root)
+        model = {"model": BERT_TINY_MODEL}
+        current_path = download_model(MODEL_ROOT, model)
+        self.assertEqual(current_path, MODEL_ROOT + "/" + BERT_TINY_MODEL + "/")
+        shutil.rmtree(MODEL_ROOT)
 
     def test_download_from_huggingface(self):
-        model_path = "{}/{}/".format(model_root, model_name)
-        download_from_huggingface(model_name, model_path)
+        model_path = "{}/{}/".format(MODEL_ROOT, BERT_TINY_MODEL)
+        download_from_huggingface(BERT_TINY_MODEL, model_path)
         self.assertTrue(os.path.exists(model_path) and os.listdir(model_path))
-        shutil.rmtree(model_root)
+        shutil.rmtree(MODEL_ROOT)
 
 
 if __name__ == '__main__':
