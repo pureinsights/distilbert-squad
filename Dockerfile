@@ -10,7 +10,7 @@ ENV MODELS_PATH='./models'
 # Copy local code to the container image.
 ENV APP_HOME /app
 WORKDIR $APP_HOME
-COPY . ./
+COPY ./src ./src
 
 # Install production dependencies.
 # Copy application dependency manifests to the container image.
@@ -30,4 +30,5 @@ RUN pip install -r requirements.txt
 
 EXPOSE 8080
 
+WORKDIR ./src/main
 ENTRYPOINT gunicorn --bind 0.0.0.0:8080 --workers ${WORKERS} --threads ${THREADS} app:app --timeout ${TIMEOUT}

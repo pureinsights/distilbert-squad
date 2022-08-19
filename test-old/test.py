@@ -1,6 +1,6 @@
-from model import Model
+from src.main.model import Model
 
-model = Model('../models')
+model = Model('../src/test/models_test')
 
 context = "World War II (often abbreviated to WWII or WW2), also known as the Second World War, \
  was a global war that lasted from 1939 to 1945. The vast majority of the world's countries—including all \
@@ -9,7 +9,7 @@ context = "World War II (often abbreviated to WWII or WW2), also known as the Se
 
 question = "What years did WW2 last between?"
 
-answers = model.predict([context], question, None)
+answers = model.predict(context, question, "sshleifer/tiny-distilbert-base-cased-distilled-squad")
 
 print("Question: ", question)
 print("Answer: ", answers)

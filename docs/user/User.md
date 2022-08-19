@@ -123,7 +123,7 @@ Endpoint: `http://localhost:8080/train`
 Payload:
 ```json
 {
-  "output_path": "C:\\Users\\AdrianaMorales\\Desktop\\test",
+  "output_path": "C:\\Users\\AdrianaMorales\\Desktop\\test-old",
   "model": "C:\\Users\\AdrianaMorales\\Desktop\\PDP-621",
   "data": [...],
   "batch_training": 2

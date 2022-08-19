@@ -1,23 +1,16 @@
-import os
-
-from flask import request, Response
-from model import Model
-
-from sklearn.feature_extraction.text import TfidfVectorizer
-
-from transformers import AutoModelForMaskedLM, AutoTokenizer, TrainingArguments, Trainer
-
+import datetime
+import json
 from threading import Thread
 
-import spacy
 import numpy as np
+import spacy
 import torch
+from flask import request, Response, Blueprint
+from model import Model
+from sklearn.feature_extraction.text import TfidfVectorizer
+from transformers import AutoModelForMaskedLM, AutoTokenizer, TrainingArguments, Trainer
 
-import flask
-import json
-import datetime
-
-app = flask.Flask(__name__)
+huggingface_api = Blueprint('huggingface_api', __name__)
 is_training = False
 nlp = None
 default_batch = 2
@@ -25,23 +18,27 @@ default_batch = 2
 '''
 A path is passed when creating models. This can also be overriden as a environmental variable.
 '''
-model = Model(path="./models")
+model = Model(path="../models")
 
 
-@app.route('/models', methods=['GET'])
+@huggingface_api.route('/models', methods=['GET'])
 def models():
     """
     Lists all available models.
     @return: JSON response with a list of models.
     """
     response = []
+
+    global model
+    model = Model(path=model.path)
+
     for pipeline_name in model.pipelines:
         response.append(pipeline_name)
 
     return Response(json.dumps(response), mimetype='application/json')
 
 
-@app.route('/status', methods=['GET'])
+@huggingface_api.route('/status', methods=['GET'])
 def status():
     """
     Returns the value of is_training.
@@ -52,7 +49,7 @@ def status():
     }), 200, mimetype='application/json')
 
 
-@app.route('/train', methods=['POST'])
+@huggingface_api.route('/train', methods=['POST'])
 def train_vocab():
     """
     Adds new vocabulary and trains a model on the given data.
@@ -88,7 +85,7 @@ def train_vocab():
     }), 200, mimetype='application/json')
 
 
-@app.route('/predict', methods=['POST'])
+@huggingface_api.route('/predict', methods=['POST'])
 def predict():
     """
     Predicts an answer given some chunks of text.
@@ -330,6 +327,3 @@ def spacy_tokenizer(document):
 def dfreq(idf, n):
     return (1 + n) / np.exp(idf - 1) - 1
 
-
-if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
