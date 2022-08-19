@@ -13,7 +13,7 @@ path.insert(0, os.getcwd() + "/../")
 import src.main.huggingface as huggingface
 import src.main.model as model
 
-from constants import MODELS, MODEL_ROOT, MODEL_ROOT_TRAINED, TINY_DISTILBERT_MODEL, \
+from src.test.constants import MODELS, MODEL_ROOT, MODEL_ROOT_TRAINED, TINY_DISTILBERT_MODEL, \
     PREDICT_ENDPOINT, CONTENTTYPE, DATA_TEST, TRAIN_ENDPOINT
 
 from transformers import AutoModelForMaskedLM, AutoTokenizer
