@@ -4,7 +4,7 @@ from pathlib import Path
 
 from transformers import (AutoTokenizer, AutoModelForQuestionAnswering, pipeline)
 
-from .download import download_model
+from src.main.download import download_model
 
 
 def download_models(models, path):

@@ -6,7 +6,7 @@ import numpy as np
 import spacy
 import torch
 from flask import request, Response, Blueprint
-from .model import Model
+from src.main.model import Model
 from sklearn.feature_extraction.text import TfidfVectorizer
 from transformers import AutoModelForMaskedLM, AutoTokenizer, TrainingArguments, Trainer
 

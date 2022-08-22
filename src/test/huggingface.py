@@ -4,12 +4,10 @@ from unittest import mock
 
 import numpy as np
 from flask import Flask
-from sys import path
 import os
 import json
 import spacy
 
-path.insert(0, os.getcwd() + "/../")
 import src.main.huggingface as huggingface
 import src.main.model as model
 
@@ -21,8 +19,6 @@ from transformers import AutoModelForMaskedLM, AutoTokenizer
 app = Flask(__name__)
 app.register_blueprint(huggingface.huggingface_api)
 
-model.download_models(MODELS, MODEL_ROOT)
-
 
 class TestEndpoint(unittest.TestCase):
     tester = None
@@ -31,6 +27,10 @@ class TestEndpoint(unittest.TestCase):
         super(TestEndpoint, self).__init__(*args, **kwargs)
         global tester
         tester = app.test_client()
+
+    @classmethod
+    def setUpClass(cls):
+        model.download_models(MODELS, MODEL_ROOT)
 
     def setUp(self):
         huggingface.model = model.Model(MODEL_ROOT)
@@ -256,6 +256,10 @@ class TestEndpointFunctions(unittest.TestCase):
         super(TestEndpointFunctions, self).__init__(*args, **kwargs)
         global tester
         tester = app.test_client()
+
+    @classmethod
+    def setUpClass(cls):
+        model.download_models(MODELS, MODEL_ROOT)
 
     def setUp(self):
         huggingface.nlp = spacy.load("en_core_web_sm",
