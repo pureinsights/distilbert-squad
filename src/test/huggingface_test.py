@@ -35,7 +35,7 @@ class TestEndpoint(unittest.TestCase):
     def setUp(self):
         huggingface.model = model.Model(MODEL_ROOT)
 
-    @mock.patch('huggingface.input')
+    @mock.patch('huggingface_test.input')
     def test_models(self, mock_input):
         response = tester.get(
             '/models',
@@ -46,7 +46,7 @@ class TestEndpoint(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(data, '["deepset/roberta-base-squad2"]')
 
-    @mock.patch('huggingface.input')
+    @mock.patch('huggingface_test.input')
     def test_predict(self, mock_input):
         body = {
             "model": TINY_DISTILBERT_MODEL,
@@ -329,7 +329,7 @@ class TestEndpointFunctions(unittest.TestCase):
         self.assertTrue(os.path.exists(output_path) and os.listdir(output_path))
         shutil.rmtree(output_path)
 
-    @mock.patch('huggingface.input')
+    @mock.patch('huggingface_test.input')
     def test_get_new_tokens(self, mock_input):
         answer = [('Alcoholic', 1), ('Approximately', 2), ('Australia', 3), ('Eastern', 4), ('Ground', 5),
                   ('Includes', 6), ('Indian', 7), ('Middle', 8), ('Scandinavian', 9), ('chardonnay', 13),
@@ -342,7 +342,7 @@ class TestEndpointFunctions(unittest.TestCase):
 
         self.assertEqual(different_tokens_list, answer)
 
-    @mock.patch('huggingface.input')
+    @mock.patch('huggingface_test.input')
     def test_spacy_tokenizer(self, mock_input):
         document = 'Ground spice commonly used in Indian cooking and drinks, in Middle Eastern cooking and in ' \
                    'Scandinavian baking '

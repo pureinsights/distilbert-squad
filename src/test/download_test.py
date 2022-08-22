@@ -1,9 +1,7 @@
 import shutil
 import unittest
-from sys import path
 import os
 
-path.insert(0, os.getcwd() + "/../")
 from src.main.download import download_model, download_from_huggingface
 from src.test.constants import MODEL_ROOT, BERT_TINY_MODEL
 

@@ -1,10 +1,8 @@
 import shutil
 import unittest
-from sys import path
 import os
 from transformers import pipelines
 
-path.insert(0, os.getcwd() + "/../")
 from src.main.model import download_models, load_models, Model
 from src.test.constants import TINY_DISTILBERT_MODEL, MODEL_ROOT
 
