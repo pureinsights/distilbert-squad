@@ -1,5 +1,5 @@
 from flask import Flask
-from huggingface import huggingface_api
+from src.main.huggingface import huggingface_api
 import os
 
 app = Flask(__name__)

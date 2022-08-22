@@ -30,5 +30,4 @@ RUN pip install -r requirements.txt
 
 EXPOSE 8080
 
-WORKDIR ./src/main
-ENTRYPOINT gunicorn --bind 0.0.0.0:8080 --workers ${WORKERS} --threads ${THREADS} app:app --timeout ${TIMEOUT}
+ENTRYPOINT gunicorn --bind 0.0.0.0:8080 --workers ${WORKERS} --threads ${THREADS} src.main.app:app --timeout ${TIMEOUT}
