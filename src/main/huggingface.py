@@ -19,7 +19,7 @@ mimetype = 'application/json'
 '''
 A path is passed when creating models. This can also be overriden as a environmental variable.
 '''
-model = Model(path="../models")
+model = Model(path="./src/models")
 
 
 @huggingface_api.route('/models', methods=['GET'])
