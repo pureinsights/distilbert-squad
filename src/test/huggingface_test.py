@@ -11,8 +11,8 @@ import spacy
 import src.main.huggingface as huggingface
 import src.main.model as model
 
-from src.test.resources.constants import MODELS, MODEL_ROOT, MODEL_ROOT_TRAINED, TINY_DISTILBERT_MODEL, \
-    PREDICT_ENDPOINT, CONTENTTYPE, DATA_TEST, TRAIN_ENDPOINT, DOWNLOAD_MODEL_ENDPOINT
+from src.test.resources.constants import MODELS, MODEL_ROOT, MODEL_ROOT_TRAINED, BERT_UNCASED_MODEL,\
+    TINY_DISTILBERT_MODEL, PREDICT_ENDPOINT, CONTENTTYPE, DATA_TEST, TRAIN_ENDPOINT, DOWNLOAD_MODEL_ENDPOINT
 
 from src.test.resources.functions import remove_scores_from_response, get_post_response
 
@@ -133,7 +133,7 @@ class TestEndpoint(unittest.TestCase):
     def test_train(self):
         body = {
             "output_path": MODEL_ROOT_TRAINED,
-            "model": "bert-base-uncased",
+            "model": BERT_UNCASED_MODEL,
             "data": DATA_TEST,
             "batch_training": 2
         }
@@ -145,7 +145,7 @@ class TestEndpoint(unittest.TestCase):
 
     def test_train_error_message(self):
         body_no_output_path = {
-            "model": "bert-base-uncased",
+            "model": BERT_UNCASED_MODEL,
             "data": DATA_TEST,
             "batch_training": 2
         }
@@ -158,13 +158,13 @@ class TestEndpoint(unittest.TestCase):
 
         body_no_data = {
             "output_path": MODEL_ROOT_TRAINED,
-            "model": "bert-base-uncased",
+            "model": BERT_UNCASED_MODEL,
             "batch_training": 2
         }
 
         body_data_empty = {
             "output_path": MODEL_ROOT_TRAINED,
-            "model": "bert-base-uncased",
+            "model": BERT_UNCASED_MODEL,
             "data": None,
             "batch_training": 2
         }
@@ -192,7 +192,7 @@ class TestEndpoint(unittest.TestCase):
     @mock.patch('huggingface_test.input')
     def test_download_models(self, mock_input):
         body1 = {
-            "models": ["sshleifer/tiny-distilbert-base-cased-distilled-squad"]
+            "models": [TINY_DISTILBERT_MODEL]
         }
 
         answer1 = '[{"model": "sshleifer/tiny-distilbert-base-cased-distilled-squad", "path": ' \
@@ -201,8 +201,8 @@ class TestEndpoint(unittest.TestCase):
 
         body2 = {
             "models": [
-                "sshleifer/tiny-distilbert-base-cased-distilled-squad",
-                "bert-base-uncased"
+                TINY_DISTILBERT_MODEL,
+                BERT_UNCASED_MODEL
             ]
         }
 
@@ -214,9 +214,9 @@ class TestEndpoint(unittest.TestCase):
 
         body3 = {
             "models": [
-                "sshleifer/tiny-distilbert-base-cased-distilled-squad",
+                TINY_DISTILBERT_MODEL,
                 "noneexistant_model",
-                "bert-base-uncased"
+                BERT_UNCASED_MODEL
             ]
         }
 
@@ -296,7 +296,7 @@ class TestEndpointFunctions(unittest.TestCase):
         self.assertEqual(result, response)
 
     def test_start_train(self):
-        model_name = "bert-base-uncased"
+        model_name = BERT_UNCASED_MODEL
         output_path = MODEL_ROOT_TRAINED
         batch_size = 2
 
@@ -314,7 +314,7 @@ class TestEndpointFunctions(unittest.TestCase):
         shutil.rmtree(MODEL_ROOT_TRAINED)
 
     def test_train_mlm(self):
-        model_name = "bert-base-uncased"
+        model_name = BERT_UNCASED_MODEL
         output_path = MODEL_ROOT_TRAINED
 
         tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
@@ -339,7 +339,7 @@ class TestEndpointFunctions(unittest.TestCase):
                   ('Includes', 6), ('Indian', 7), ('Middle', 8), ('Scandinavian', 9), ('chardonnay', 13),
                   ('fermentation', 19), ('sugars', 28)]
 
-        model_name = "bert-base-uncased"
+        model_name = BERT_UNCASED_MODEL
 
         tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
         different_tokens_list = huggingface.get_new_tokens(DATA_TEST, tokenizer)

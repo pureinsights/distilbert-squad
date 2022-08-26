@@ -1,8 +1,7 @@
 MODELS = [{"model": 'deepset/roberta-base-squad2'}]
 MODEL_ROOT = "./models_test"
 CONTENTTYPE = 'application/json'
-TINY_DISTILBERT_MODEL = "sshleifer/tiny-distilbert-base-cased-distilled-squad"
-BERT_TINY_MODEL = "prajjwal1/bert-tiny"
+
 MODEL_ROOT_TRAINED = "./models_test/trained/"
 DATA_TEST = ["Ground spice commonly used in Indian cooking and drinks, in Middle Eastern cooking and in Scandinavian "
              "baking",
@@ -13,3 +12,7 @@ DATA_TEST = ["Ground spice commonly used in Indian cooking and drinks, in Middle
 PREDICT_ENDPOINT = "/predict"
 TRAIN_ENDPOINT = "/train"
 DOWNLOAD_MODEL_ENDPOINT = "/download-model"
+
+TINY_DISTILBERT_MODEL = "sshleifer/tiny-distilbert-base-cased-distilled-squad"
+BERT_TINY_MODEL = "prajjwal1/bert-tiny"
+BERT_UNCASED_MODEL = "bert-base-uncased"
