@@ -15,8 +15,20 @@ def download_models(models, path):
     @param models: JSON objects with models to download.
     @return:A tuple of pipelines and the default one.
     """
+    models_downloaded = []
+    is_error_found = False
+
     for model in models:
-        download_model(path, model)
+        model_name = model["model"]
+        try:
+            model_exists = download_model(path, model)
+            models_downloaded.append(
+                {"model": model_name, "status": "Model exists" if model_exists else "Model downloaded"})
+        except Exception as e:
+            models_downloaded.append({"model": model_name, "status": str(e)})
+            is_error_found = True
+
+    return models_downloaded, is_error_found
 
 
 def load_models(path, device):
@@ -66,15 +78,15 @@ class Model:
         PATH_ENV_VARIABLE = "MODELS_PATH"
         CPU_GPU_DEVICE_VARIABLE = "CPU_GPU_DEVICE"
         # If an environment variable with MODEL_PATH has been set, then use it.
-        path = environ[PATH_ENV_VARIABLE] if environ.get(PATH_ENV_VARIABLE) is not None else path
+        self.path = environ[PATH_ENV_VARIABLE] if environ.get(PATH_ENV_VARIABLE) is not None else path
         '''
         Device ordinal for CPU/GPU support. 
         Setting this to -1 will leverage CPU, >=0 will run the model on the associated CUDA device id.
         See https://huggingface.co/transformers/v3.0.2/main_classes/pipelines.html
         '''
-        device = int(environ[CPU_GPU_DEVICE_VARIABLE]) if environ.get(CPU_GPU_DEVICE_VARIABLE) is not None else -1
-        self.path = path
-        self.pipelines, self.default_pipeline = load_models(path, device)
+        self.device = int(environ[CPU_GPU_DEVICE_VARIABLE]) if environ.get(CPU_GPU_DEVICE_VARIABLE) is not None else -1
+
+        self.pipelines, self.default_pipeline = load_models(self.path, self.device)
 
     def get_pipeline(self, model_name):
         """
@@ -106,3 +118,6 @@ class Model:
             answers = [answers]
 
         return answers
+
+    def reload_models(self):
+        self.pipelines, self.default_pipeline = load_models(self.path, self.device)

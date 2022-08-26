@@ -6,7 +6,7 @@ import numpy as np
 import spacy
 import torch
 from flask import request, Response, Blueprint
-from src.main.model import Model
+from src.main.model import Model, download_models
 from sklearn.feature_extraction.text import TfidfVectorizer
 from transformers import AutoModelForMaskedLM, AutoTokenizer, TrainingArguments, Trainer
 
@@ -30,8 +30,7 @@ def models():
     """
     response = []
 
-    global model
-    model = Model(path=model.path)
+    model.reload_models()
 
     for pipeline_name in model.pipelines:
         response.append(pipeline_name)
@@ -124,6 +123,30 @@ def predict():
 
     return Response(json.dumps(sorted(response, key=lambda answer: answer['score'], reverse=True)),
                     mimetype=mimetype)
+
+
+@huggingface_api.route('/download-model', methods=['POST'])
+def download_model():
+    """
+    download specified models.
+    @return: Return if the status of downloading models.
+    """
+    body = request.get_json()
+
+    if not body:
+        return error_message('Missing input body', 400)
+
+    if 'models' not in body:
+        return error_message('To download a model, the name(s) should be specified', 400)
+
+    models_to_process = [{"model": curr_model} for curr_model in body['models']]
+
+    response, is_error_found = download_models(models_to_process, model.path)
+
+    model.reload_models()
+
+    return error_message(response, 400) if is_error_found \
+        else Response(json.dumps(response), mimetype=mimetype)
 
 
 def highlight(text, answer, style):

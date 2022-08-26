@@ -16,16 +16,23 @@ def download_model(path, model):
     """
     model_name = model['model']
     model_path = "{}/{}/".format(path, model_name)
-    if not os.path.isdir(model_path):
-        os.makedirs(model_path)  # Create the dir
-        print("Downloading model {} to {}".format(model_name, model_path))
-        download_from_huggingface(model_name, model_path)
-    else:
-        print("Model already exists: {}".format(model_path))
-    return model_path
+    model_exists = False
+    try:
+        if not os.path.isdir(model_path):
+            os.makedirs(model_path)  # Create the dir
+            print("Downloading model {} to {}".format(model_name, model_path))
+            download_from_huggingface_qa(model_name, model_path)
+        else:
+            print("Model already exists: {}".format(model_path))
+            model_exists = True
+    except Exception as e:
+        os.rmdir(model_path)
+        raise e
+
+    return model_exists
 
 
-def download_from_huggingface(model_name, model_path):
+def download_from_huggingface_qa(model_name, model_path):
     """
     To download files related to the model and the tokenizer, first it is needed to instantiate the model and the tokenizer,
     which will download the files from Hugging Face's repo. Then these are saved to disk.
@@ -33,7 +40,10 @@ def download_from_huggingface(model_name, model_path):
     @param model_path: Path to where to store the model on disk
     @return:
     """
-    model = AutoModelForQuestionAnswering.from_pretrained(model_name)
-    model.save_pretrained(model_path)
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    tokenizer.save_pretrained(model_path)
+    try:
+        model = AutoModelForQuestionAnswering.from_pretrained(model_name)
+        model.save_pretrained(model_path)
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        tokenizer.save_pretrained(model_path)
+    except OSError as e:
+        raise e
