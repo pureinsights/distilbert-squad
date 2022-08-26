@@ -40,12 +40,8 @@ def download_from_huggingface_qa(model_name, model_path):
     @param model_name: Name of the model (as expected to be found in Hugging Face)
     @param model_path: Path to where to store the model on disk
     @return:
-    @raise: throws an error if the model can't be downloaded and remove dir
     """
-    try:
-        model = AutoModelForQuestionAnswering.from_pretrained(model_name)
-        model.save_pretrained(model_path)
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
-        tokenizer.save_pretrained(model_path)
-    except OSError as e:
-        raise e
+    model = AutoModelForQuestionAnswering.from_pretrained(model_name)
+    model.save_pretrained(model_path)
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer.save_pretrained(model_path)
