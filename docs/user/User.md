@@ -174,3 +174,68 @@ Sample Result:
   "training_status": true
 }
 ```
+
+## Download Models
+
+Given valid and public model names, download and store them on disk.
+
+Verb: `POST`
+
+Endpoint: `http://localhost:8080/download-model`
+
+Payload: 
+```json
+{
+    "models": [
+      "sshleifer/tiny-distilbert-base-cased-distilled-squad",
+      "no_valid_model", 
+      "bert-base-uncased"]
+}
+```
+
+## Parameters:
+
+`models` - Required, list.
+
+Model names to search and download on disk.
+
+Sample Response:
+
+Example 1
+```json
+{
+    "message": [
+        {
+            "model": "sshleifer/tiny-distilbert-base-cased-distilled-squad",
+            "path": "../models/sshleifer/tiny-distilbert-base-cased-distilled-squad/",
+            "status": "Model downloaded"
+        },
+        {
+            "model": "no_valid_model",
+            "status": "We couldn't connect to 'https://huggingface.co/' to load this model and it looks like no_valid_model is not the path to a directory conaining a config.json file.\nCheckout your internet connection or see how to run the library in offline mode at 'https://huggingface.co/docs/transformers/installation#offline-mode'."
+        },
+        {
+            "model": "bert-base-uncased",
+            "path": "../models/sshleifer/tiny-distilbert-base-cased-distilled-squad//bert-base-uncased/",
+            "status": "Model downloaded"
+        }
+    ],
+    "status": 400
+}
+```
+
+Example 2
+```json
+[
+    {
+        "model": "sshleifer/tiny-distilbert-base-cased-distilled-squad",
+        "path": "../models/sshleifer/tiny-distilbert-base-cased-distilled-squad/",
+        "status": "Model downloaded"
+    },
+    {
+        "model": "bert-base-uncased",
+        "path": "../models/sshleifer/tiny-distilbert-base-cased-distilled-squad//bert-base-uncased/",
+        "status": "Model downloaded"
+    }
+]
+```
