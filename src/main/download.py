@@ -12,7 +12,8 @@ def download_model(path, model):
     Otherwise, the model should exist on disk.
     @param path: Path to where the models will be downloaded.
     @param model: Model object.
-    @return: Path to the model on disk.
+    @return: Path to the model on disk and if the model already exists
+    @raise: throws an error if the model can't be downloaded and remove dir
     """
     model_name = model['model']
     model_path = "{}/{}/".format(path, model_name)
@@ -29,7 +30,7 @@ def download_model(path, model):
         os.rmdir(model_path)
         raise e
 
-    return model_exists
+    return model_path, model_exists
 
 
 def download_from_huggingface_qa(model_name, model_path):
@@ -39,6 +40,7 @@ def download_from_huggingface_qa(model_name, model_path):
     @param model_name: Name of the model (as expected to be found in Hugging Face)
     @param model_path: Path to where to store the model on disk
     @return:
+    @raise: throws an error if the model can't be downloaded and remove dir
     """
     try:
         model = AutoModelForQuestionAnswering.from_pretrained(model_name)

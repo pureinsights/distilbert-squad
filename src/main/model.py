@@ -13,7 +13,7 @@ def download_models(models, path):
     If a folder already exists for a model then it is assumed it was downloaded before.
     @param path: Path where models will be stored.
     @param models: JSON objects with models to download.
-    @return:A tuple of pipelines and the default one.
+    @return:the model name with its status and if an error was found
     """
     models_downloaded = []
     is_error_found = False
@@ -21,9 +21,9 @@ def download_models(models, path):
     for model in models:
         model_name = model["model"]
         try:
-            model_exists = download_model(path, model)
+            path, model_exists = download_model(path, model)
             models_downloaded.append(
-                {"model": model_name, "status": "Model exists" if model_exists else "Model downloaded"})
+                {"model": model_name, "path": path, "status": "Model exists" if model_exists else "Model downloaded"})
         except Exception as e:
             models_downloaded.append({"model": model_name, "status": str(e)})
             is_error_found = True
