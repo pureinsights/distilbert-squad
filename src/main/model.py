@@ -21,9 +21,10 @@ def download_models(models, path):
     for model in models:
         model_name = model["model"]
         try:
-            path, model_exists = download_model(path, model)
+            current_path, model_exists = download_model(path, model)
             models_downloaded.append(
-                {"model": model_name, "path": path, "status": "Model exists" if model_exists else "Model downloaded"})
+                {"model": model_name, "path": current_path, "status": "Model exists" if model_exists else "Model "
+                                                                                                          "downloaded"})
         except Exception as e:
             models_downloaded.append({"model": model_name, "status": str(e)})
             is_error_found = True

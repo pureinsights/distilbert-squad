@@ -4,7 +4,8 @@ import os
 from transformers import pipelines
 
 from src.main.model import download_models, load_models, Model
-from src.test.constants import TINY_DISTILBERT_MODEL, MODEL_ROOT
+from src.test.resources.constants import TINY_DISTILBERT_MODEL, MODEL_ROOT
+from src.test.resources.functions import remove_scores_from_response
 
 
 class TestModel(unittest.TestCase):
@@ -59,11 +60,12 @@ class TestModel(unittest.TestCase):
                                                  '"giant-killing" victory.']
         question = "How many games are required to win the FA Cup?"
 
-        answer = [{'score': 0.6043325066566467, 'start': 693, 'end': 708, 'answer': 'six to fourteen'},
-                  {'score': 0.0016566978301852942, 'start': 64, 'end': 66, 'answer': '32'}]
+        answer = [{'start': 693, 'end': 708, 'answer': 'six to fourteen'},
+                  {'start': 64, 'end': 66, 'answer': '32'}]
 
         model_class = Model(MODEL_ROOT)
-        self.assertEqual(model_class.predict(texts, question, 'deepset/roberta-base-squad2'), answer)
+        response_answer = remove_scores_from_response(model_class.predict(texts, question, 'deepset/roberta-base-squad2'))
+        self.assertEqual(response_answer, answer)
         shutil.rmtree(MODEL_ROOT)
 
 

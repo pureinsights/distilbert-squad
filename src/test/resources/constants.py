@@ -12,3 +12,4 @@ DATA_TEST = ["Ground spice commonly used in Indian cooking and drinks, in Middle
 
 PREDICT_ENDPOINT = "/predict"
 TRAIN_ENDPOINT = "/train"
+DOWNLOAD_MODEL_ENDPOINT = "/download-model"
