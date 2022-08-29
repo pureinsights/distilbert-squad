@@ -4,7 +4,7 @@ from pathlib import Path
 
 from transformers import (AutoTokenizer, AutoModelForQuestionAnswering, pipeline)
 
-from download import download_model
+from src.main.download import download_model
 
 
 def download_models(models, path):
@@ -26,6 +26,8 @@ def load_models(path, device):
     where the key is the model name (as defined in the config.json file)
     or the folder path if that value is not present.
     @param path: Location to scan.
+    @param device: (int, optional, defaults to -1) — Device ordinal for CPU/GPU supports. Setting this to -1 will
+    leverage CPU, a positive will run the model on the associated CUDA device id. You can pass native torch.device too.
     @return: Tuple consisting of: a map of pipelines and a default pipeline.
     """
     print("Loading models...")
@@ -71,6 +73,7 @@ class Model:
         See https://huggingface.co/transformers/v3.0.2/main_classes/pipelines.html
         '''
         device = int(environ[CPU_GPU_DEVICE_VARIABLE]) if environ.get(CPU_GPU_DEVICE_VARIABLE) is not None else -1
+        self.path = path
         self.pipelines, self.default_pipeline = load_models(path, device)
 
     def get_pipeline(self, model_name):

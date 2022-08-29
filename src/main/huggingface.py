@@ -1,47 +1,45 @@
-import os
-
-from flask import request, Response
-from model import Model
-
-from sklearn.feature_extraction.text import TfidfVectorizer
-
-from transformers import AutoModelForMaskedLM, AutoTokenizer, TrainingArguments, Trainer
-
+import datetime
+import json
 from threading import Thread
 
-import spacy
 import numpy as np
+import spacy
 import torch
+from flask import request, Response, Blueprint
+from src.main.model import Model
+from sklearn.feature_extraction.text import TfidfVectorizer
+from transformers import AutoModelForMaskedLM, AutoTokenizer, TrainingArguments, Trainer
 
-import flask
-import json
-import datetime
-
-app = flask.Flask(__name__)
+huggingface_api = Blueprint('huggingface_api', __name__)
 is_training = False
 nlp = None
 default_batch = 2
+mimetype = 'application/json'
 
 '''
 A path is passed when creating models. This can also be overriden as a environmental variable.
 '''
-model = Model(path="./models")
+model = Model(path="../models")
 
 
-@app.route('/models', methods=['GET'])
+@huggingface_api.route('/models', methods=['GET'])
 def models():
     """
     Lists all available models.
     @return: JSON response with a list of models.
     """
     response = []
+
+    global model
+    model = Model(path=model.path)
+
     for pipeline_name in model.pipelines:
         response.append(pipeline_name)
 
-    return Response(json.dumps(response), mimetype='application/json')
+    return Response(json.dumps(response), mimetype=mimetype)
 
 
-@app.route('/status', methods=['GET'])
+@huggingface_api.route('/status', methods=['GET'])
 def status():
     """
     Returns the value of is_training.
@@ -49,10 +47,10 @@ def status():
     """
     return Response(json.dumps({
         'training_status': is_training,
-    }), 200, mimetype='application/json')
+    }), 200, mimetype=mimetype)
 
 
-@app.route('/train', methods=['POST'])
+@huggingface_api.route('/train', methods=['POST'])
 def train_vocab():
     """
     Adds new vocabulary and trains a model on the given data.
@@ -85,10 +83,10 @@ def train_vocab():
     return Response(json.dumps({
         'message': "Training started",
         'timestamp': datetime.datetime.now().isoformat()
-    }), 200, mimetype='application/json')
+    }), 200, mimetype=mimetype)
 
 
-@app.route('/predict', methods=['POST'])
+@huggingface_api.route('/predict', methods=['POST'])
 def predict():
     """
     Predicts an answer given some chunks of text.
@@ -125,7 +123,7 @@ def predict():
         response.append(prediction)
 
     return Response(json.dumps(sorted(response, key=lambda answer: answer['score'], reverse=True)),
-                    mimetype='application/json')
+                    mimetype=mimetype)
 
 
 def highlight(text, answer, style):
@@ -153,7 +151,7 @@ def error_message(message, status):
         'message': message,
         'status': status,
         'timestamp': datetime.datetime.now().isoformat()
-    }), status, mimetype='application/json')
+    }), status, mimetype=mimetype)
 
 
 class TrainDataset(torch.utils.data.Dataset):
@@ -168,7 +166,6 @@ class TrainDataset(torch.utils.data.Dataset):
 
 
 def start_train(model_name, output_path, batch_size, data):
-
     response = []
 
     try:
@@ -197,7 +194,7 @@ def start_train(model_name, output_path, batch_size, data):
             'message': "MLM Training finished, model saved at: '" + output_path + "'",
             'added_tokens': new_tokens,
             'timestamp': datetime.datetime.now().isoformat()
-        }), 200, mimetype='application/json')
+        }), 200, mimetype=mimetype)
 
     except Exception as e:
         response = error_message(str(e), 500)
@@ -206,7 +203,7 @@ def start_train(model_name, output_path, batch_size, data):
 
         global is_training
         is_training = False
-        return response
+    return response
 
 
 def train_mlm(docs, loaded_model, tokenizer, output_path, batch_size):
@@ -238,7 +235,6 @@ def train_mlm(docs, loaded_model, tokenizer, output_path, batch_size):
         inputs.input_ids[i, selection[i]] = 103
 
     dataset = TrainDataset(inputs)
-    loader = torch.utils.data.DataLoader(dataset, batch_size=15, shuffle=True)
 
     loaded_model.train()
 
@@ -261,8 +257,6 @@ def train_mlm(docs, loaded_model, tokenizer, output_path, batch_size):
     trainer.train()
 
     loaded_model.save_pretrained(output_path)
-
-    return
 
 
 def get_new_tokens(documents, tokenizer):
@@ -300,9 +294,9 @@ def get_new_tokens(documents, tokenizer):
     for idx_new, w in enumerate(new_vocab):
         try:
             idx_old = old_vocab.index(w)
-        except:
+        except ValueError:
             idx_old = -1
-        if not idx_old >= 0:
+        if idx_old < 0:
             different_tokens_list.append((w, idx_new))
 
     return different_tokens_list
@@ -329,7 +323,3 @@ def spacy_tokenizer(document):
 
 def dfreq(idf, n):
     return (1 + n) / np.exp(idf - 1) - 1
-
-
-if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))

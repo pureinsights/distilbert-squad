@@ -25,7 +25,7 @@ models = [{"model": 'deepset/roberta-base-squad2'},
           {"model": 'oliverproud/distilbert-finetuned-model'},
           {"model": 'mrm8488/distilbert-multi-finetuned-for-xqua-on-tydiqa'},
           {"model": 'distilbert-base-cased-distilled-squad'}]
-path = "./models"
+path = "src/models"
 ```
 THe model name needs to match the name in the [Hugging Face repository](https://huggingface.co/models).
 
@@ -165,7 +165,7 @@ Endpoint: `http://localhost:8080/train`
 Payload:
 ```json
 {
-  "output_path": "C:\\Users\\AdrianaMorales\\Desktop\\test",
+  "output_path": "C:\\Users\\AdrianaMorales\\Desktop\\test-old",
   "model": "C:\\Users\\AdrianaMorales\\Desktop\\PDP-621",
   "data": [...],
   "batch_training": 2
@@ -175,7 +175,7 @@ Payload:
 Sample Response:
 ```json
 {
-  "message": "MLM Training finished, model saved at: 'C:\\Users\\AdrianaMorales\\Desktop\\test'",
+  "message": "MLM Training finished, model saved at: 'C:\\Users\\AdrianaMorales\\Desktop\\test-old'",
   "added_tokens": [...],
   "timestamp": "2022-04-22T08:54:17.050676"
 }

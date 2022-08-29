@@ -5,12 +5,12 @@ FROM python:3.7-slim
 ENV WORKERS=1
 ENV THREADS=8
 ENV TIMEOUT=900
-ENV MODELS_PATH='./models'
+ENV MODELS_PATH='./src/models'
 
 # Copy local code to the container image.
 ENV APP_HOME /app
 WORKDIR $APP_HOME
-COPY . ./
+COPY ./src ./src
 
 # Install production dependencies.
 # Copy application dependency manifests to the container image.
@@ -30,4 +30,4 @@ RUN pip install -r requirements.txt
 
 EXPOSE 8080
 
-ENTRYPOINT gunicorn --bind 0.0.0.0:8080 --workers ${WORKERS} --threads ${THREADS} app:app --timeout ${TIMEOUT}
+ENTRYPOINT gunicorn --bind 0.0.0.0:8080 --workers ${WORKERS} --threads ${THREADS} src.main.app:app --timeout ${TIMEOUT}
