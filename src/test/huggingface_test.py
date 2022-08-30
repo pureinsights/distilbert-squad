@@ -9,10 +9,13 @@ import json
 import spacy
 
 import src.main.huggingface as huggingface
-import src.main.model as model
+from src.main.model import ModelQA, ModelST
+from src.main.download import download_models
 
-from src.test.resources.constants import MODELS, MODEL_ROOT, MODEL_ROOT_TRAINED, BERT_UNCASED_MODEL,\
-    TINY_DISTILBERT_MODEL, PREDICT_ENDPOINT, CONTENTTYPE, DATA_TEST, TRAIN_ENDPOINT, DOWNLOAD_MODEL_ENDPOINT
+from src.test.resources.constants import MODELS_QA, MODEL_ROOT, PATHS_TO_DOWNLOAD, MODEL_ROOT_TRAINED, \
+    BERT_UNCASED_MODEL, \
+    TINY_DISTILBERT_MODEL, PREDICT_ENDPOINT, CONTENTTYPE, DATA_TEST, TRAIN_ENDPOINT, DOWNLOAD_MODEL_ENDPOINT, MODELS_ST, \
+    DATA_TEST_SINGLE_TEXT, ENCODE_ENDPOINT
 
 from src.test.resources.functions import remove_scores_from_response, get_post_response
 
@@ -32,10 +35,12 @@ class TestEndpoint(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        model.download_models(MODELS, MODEL_ROOT)
+        download_models(PATHS_TO_DOWNLOAD, MODELS_QA)
+        download_models(PATHS_TO_DOWNLOAD, MODELS_ST)
 
     def setUp(self):
-        huggingface.model = model.Model(MODEL_ROOT)
+        huggingface.modelQA = ModelQA(MODEL_ROOT)
+        huggingface.modelST = ModelST(MODEL_ROOT)
 
     @mock.patch('huggingface_test.input')
     def test_models(self, mock_input):
@@ -46,7 +51,8 @@ class TestEndpoint(unittest.TestCase):
 
         data = response.get_data(as_text=True)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(data, '["deepset/roberta-base-squad2"]')
+        self.assertEqual(data, '["./models_test/qa/deepset/roberta-base-squad2", '
+                               '"./models_test/st/deepset/roberta-base-squad2"]')
 
     @mock.patch('huggingface_test.input')
     def test_predict(self, mock_input):
@@ -192,43 +198,43 @@ class TestEndpoint(unittest.TestCase):
     @mock.patch('huggingface_test.input')
     def test_download_models(self, mock_input):
         body1 = {
-            "models": [TINY_DISTILBERT_MODEL]
+            "questionAndAnswer": [TINY_DISTILBERT_MODEL]
         }
 
-        answer1 = '[{"model": "sshleifer/tiny-distilbert-base-cased-distilled-squad", "path": ' \
-                 '"./models_test/sshleifer/tiny-distilbert-base-cased-distilled-squad/", "status": "Model ' \
-                 'downloaded"}]'
+        answer1 = '{"questionAndAnswer": [{"model": "sshleifer/tiny-distilbert-base-cased-distilled-squad", ' \
+                  '"path": "./models_test/qa/sshleifer/tiny-distilbert-base-cased-distilled-squad/", "status": "Model ' \
+                  'downloaded"}]}'
 
         body2 = {
-            "models": [
+            "questionAndAnswer": [
                 TINY_DISTILBERT_MODEL,
                 BERT_UNCASED_MODEL
             ]
         }
 
-        answer2 = '[{"model": "sshleifer/tiny-distilbert-base-cased-distilled-squad", "path": ' \
-                 '"./models_test/sshleifer/tiny-distilbert-base-cased-distilled-squad/", "status": "Model exists"}, ' \
-                 '{"model": "bert-base-uncased", "path": ' \
-                 '"./models_test/bert-base-uncased/", ' \
-                 '"status": "Model downloaded"}]'
+        answer2 = '{"questionAndAnswer": [{"model": "sshleifer/tiny-distilbert-base-cased-distilled-squad", ' \
+                  '"path": "./models_test/qa/sshleifer/tiny-distilbert-base-cased-distilled-squad/", "status": "Model ' \
+                  'exists"}, {"model": "bert-base-uncased", "path": "./models_test/qa/bert-base-uncased/", ' \
+                  '"status": "Model downloaded"}]}'
 
         body3 = {
-            "models": [
+            "questionAndAnswer": [
                 TINY_DISTILBERT_MODEL,
                 "noneexistant_model",
                 BERT_UNCASED_MODEL
             ]
         }
 
-        answer3 = "{'message': [{'model': 'sshleifer/tiny-distilbert-base-cased-distilled-squad', 'path': " \
-                  "'./models_test/sshleifer/tiny-distilbert-base-cased-distilled-squad/', 'status': 'Model exists'}, " \
-                  "{'model': 'noneexistant_model', 'status': \"We couldn't connect to 'https://huggingface.co/' to " \
-                  "load this model and it looks like noneexistant_model is not the path to a directory conaining a " \
-                  "config.json file.\\nCheckout your internet connection or see how to run the library in offline " \
-                  "mode at 'https://huggingface.co/docs/transformers/installation#offline-mode'.\"}, " \
-                  "{'model': 'bert-base-uncased', 'path': " \
-                  "'./models_test/bert-base-uncased/', " \
-                  "'status': 'Model exists'}], 'status': 400}"
+        answer3 = "{'message': {'questionAndAnswer': [{'model': " \
+                  "'sshleifer/tiny-distilbert-base-cased-distilled-squad', 'path': " \
+                  "'./models_test/qa/sshleifer/tiny-distilbert-base-cased-distilled-squad/', 'status': 'Model " \
+                  "exists'}, {'model': 'noneexistant_model', 'status': \"We couldn't connect to " \
+                  "'https://huggingface.co/' to load this model and it looks like noneexistant_model is not the path " \
+                  "to a directory conaining a config.json file.\\nCheckout your internet connection or see how to run " \
+                  "the library in offline mode at " \
+                  "'https://huggingface.co/docs/transformers/installation#offline-mode'.\"}, {'model': " \
+                  "'bert-base-uncased', 'path': './models_test/qa/bert-base-uncased/', 'status': 'Model exists'}]}, " \
+                  "'status': 400}"
 
         response1, status_code1 = get_post_response(tester, DOWNLOAD_MODEL_ENDPOINT, body1, CONTENTTYPE)
         response2, status_code2 = get_post_response(tester, DOWNLOAD_MODEL_ENDPOINT, body2, CONTENTTYPE)
@@ -244,9 +250,28 @@ class TestEndpoint(unittest.TestCase):
         self.assertEqual(status_code3, 400)
         self.assertEqual(str(response3), answer3)
 
-        shutil.rmtree('./models_test/sshleifer')
-        shutil.rmtree('./models_test/bert-base-uncased')
+        shutil.rmtree('./models_test/qa/sshleifer')
+        shutil.rmtree('./models_test/qa/bert-base-uncased')
 
+    @mock.patch('huggingface_test.input')
+    def test_encode(self, mock_input):
+        body = {
+            "model": TINY_DISTILBERT_MODEL,
+            "id": "123",
+            "texts": [DATA_TEST_SINGLE_TEXT]
+        }
+
+        answer = "{'id': '123', 'result': [[0.007092174142599106, -0.007092198356986046]]}"
+
+        response1, status_code1 = get_post_response(tester, ENCODE_ENDPOINT, body, CONTENTTYPE, convert_json=True)
+
+        self.assertEqual(status_code1, 200)
+        self.assertEqual(str(response1), answer)
+
+    def test_encode_error_message(self):
+        _, status_code1 = get_post_response(tester, ENCODE_ENDPOINT, None, CONTENTTYPE)
+
+        self.assertEqual(status_code1, 400)
 
     @classmethod
     def tearDownClass(cls):
@@ -263,7 +288,7 @@ class TestEndpointFunctions(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        model.download_models(MODELS, MODEL_ROOT)
+        download_models(PATHS_TO_DOWNLOAD, MODELS_QA)
 
     def setUp(self):
         huggingface.nlp = spacy.load("en_core_web_sm",

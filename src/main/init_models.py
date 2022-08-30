@@ -1,11 +1,14 @@
 """
 NOTE: This file is only meant to run locally to download models!
 """
-import model
+from src.main.download import download_models
 
-models = [{"model": 'deepset/roberta-base-squad2'},
-          {"model": 'mrm8488/distilbert-multi-finetuned-for-xqua-on-tydiqa'},
-          {"model": 'distilbert-base-cased-distilled-squad'}]
+models = {
+    "questionAndAnswer": ['deepset/roberta-base-squad2',
+                          'mrm8488/distilbert-multi-finetuned-for-xqua-on-tydiqa',
+                          'distilbert-base-cased-distilled-squad']
+}
+
 path = "../models"
 
-model.download_models(models, path)
+download_models(models, path)

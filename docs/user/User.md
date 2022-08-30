@@ -105,10 +105,10 @@ Payload: None
 Sample Result:
 ```json
 [
-    "deepset/roberta-base-squad2",
-    "distilbert-base-cased-distilled-squad",
-    "mrm8488/distilbert-multi-finetuned-for-xqua-on-tydiqa",
-    "models\\oliverproud\\distilbert-finetuned-model"
+    "{path}/deepset/roberta-base-squad2",
+    "{path}/distilbert-base-cased-distilled-squad",
+    "{path}/mrm8488/distilbert-multi-finetuned-for-xqua-on-tydiqa",
+    "{path}/models\\oliverproud\\distilbert-finetuned-model"
 ]
 ```
 
@@ -186,56 +186,82 @@ Endpoint: `http://localhost:8080/download-model`
 Payload: 
 ```json
 {
-    "models": [
-      "sshleifer/tiny-distilbert-base-cased-distilled-squad",
-      "no_valid_model", 
-      "bert-base-uncased"]
+    "sentenceTransformer": [
+        "bert-base-uncased"
+    ],
+    "questionAndAnswer": [
+        "sshleifer/tiny-distilbert-base-cased-distilled-squad",
+        "noneexistant_model",
+        "bert-base-uncased"
+    ]
 }
 ```
 
 ## Parameters:
 
-`models` - Required, list.
+`sentenceTransformer` - Optional, list.
 
-Model names to search and download on disk.
+Models to search and download on disk for the specified transformer.
+
+`questionAndAnswer` - Optional, list.
+
+Models to search and download on disk for the specified transformer.
 
 Sample Response:
 
 Example 1
 ```json
 {
-    "message": [
-        {
-            "model": "sshleifer/tiny-distilbert-base-cased-distilled-squad",
-            "path": "../models/sshleifer/tiny-distilbert-base-cased-distilled-squad/",
-            "status": "Model downloaded"
-        },
-        {
-            "model": "no_valid_model",
-            "status": "We couldn't connect to 'https://huggingface.co/' to load this model and it looks like no_valid_model is not the path to a directory conaining a config.json file.\nCheckout your internet connection or see how to run the library in offline mode at 'https://huggingface.co/docs/transformers/installation#offline-mode'."
-        },
-        {
-            "model": "bert-base-uncased",
-            "path": "../models/sshleifer/tiny-distilbert-base-cased-distilled-squad//bert-base-uncased/",
-            "status": "Model downloaded"
-        }
-    ],
+    "message": {
+        "questionAndAnswer": [
+            {
+                "model": "sshleifer/tiny-distilbert-base-cased-distilled-squad",
+                "path": "../models/qa/sshleifer/tiny-distilbert-base-cased-distilled-squad/",
+                "status": "Model downloaded"
+            },
+            {
+                "model": "no_valid_model",
+                "status": "We couldn't connect to 'https://huggingface.co/' to load this model and it looks like no_valid_model is not the path to a directory conaining a config.json file.\nCheckout your internet connection or see how to run the library in offline mode at 'https://huggingface.co/docs/transformers/installation#offline-mode'."
+            },
+            {
+                "model": "bert-base-uncased",
+                "path": "../models/qa/sshleifer/tiny-distilbert-base-cased-distilled-squad//bert-base-uncased/",
+                "status": "Model downloaded"
+            }
+        ],
+      "sentenceTransformer": [
+          {
+                "model": "bert-base-uncased",
+                "path": "../models/st/sshleifer/tiny-distilbert-base-cased-distilled-squad//bert-base-uncased/",
+                "status": "Model downloaded"
+            }
+        ]
+    },
     "status": 400
 }
 ```
 
 Example 2
 ```json
-[
-    {
+{
+  "questionAndAnswer": [
+      {
         "model": "sshleifer/tiny-distilbert-base-cased-distilled-squad",
-        "path": "../models/sshleifer/tiny-distilbert-base-cased-distilled-squad/",
+        "path": "../models/qa/sshleifer/tiny-distilbert-base-cased-distilled-squad/",
         "status": "Model downloaded"
-    },
+      },
+      {
+        "model": "bert-base-uncased",
+        "path": "../models/qa/sshleifer/tiny-distilbert-base-cased-distilled-squad//bert-base-uncased/",
+        "status": "Model downloaded"
+      }
+    ],
+  "sentenceTransformer": [
     {
         "model": "bert-base-uncased",
-        "path": "../models/sshleifer/tiny-distilbert-base-cased-distilled-squad//bert-base-uncased/",
+        "path": "../models/st/sshleifer/tiny-distilbert-base-cased-distilled-squad//bert-base-uncased/",
         "status": "Model downloaded"
     }
-]
+  ]
+}
 ```

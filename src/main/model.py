@@ -1,80 +1,12 @@
 import json
-from os import environ
 from pathlib import Path
+from os import environ
 
 from transformers import (AutoTokenizer, AutoModelForQuestionAnswering, pipeline)
-
-from src.main.download import download_model
-
-
-def download_models(models, path):
-    """
-    Download models from Hugging Face repositories into a specific folder.
-    If a folder already exists for a model then it is assumed it was downloaded before.
-    @param path: Path where models will be stored.
-    @param models: JSON objects with models to download.
-    @return:the model name with its status and if an error was found
-    """
-    models_downloaded = []
-    is_error_found = False
-
-    for model in models:
-        model_name = model["model"]
-        try:
-            current_path, model_exists = download_model(path, model)
-            models_downloaded.append(
-                {"model": model_name, "path": current_path, "status": "Model exists" if model_exists else "Model "
-                                                                                                          "downloaded"})
-        except Exception as e:
-            models_downloaded.append({"model": model_name, "status": str(e)})
-            is_error_found = True
-
-    return models_downloaded, is_error_found
-
-
-def load_models(path, device):
-    """
-    Iterates over a specific path and loads all models available.
-    For each model a pipeline is created and stored in a pipelines map,
-    where the key is the model name (as defined in the config.json file)
-    or the folder path if that value is not present.
-    @param path: Location to scan.
-    @param device: (int, optional, defaults to -1) — Device ordinal for CPU/GPU supports. Setting this to -1 will
-    leverage CPU, a positive will run the model on the associated CUDA device id. You can pass native torch.device too.
-    @return: Tuple consisting of: a map of pipelines and a default pipeline.
-    """
-    print("Loading models...")
-    pipelines = {}
-    default_pipeline = None
-    config_file = 'config.json'
-    for config_file_path in Path(path).rglob(config_file):
-        model_path = str(config_file_path.parent)
-
-        name_path_key = '_name_or_path'
-        with open(config_file_path) as jsonFile:
-            json_object = json.load(jsonFile)
-            # Looks for the file name in the config file. If not present then it will use the path as the name.
-            model_name = json_object[name_path_key] if name_path_key in json_object else str(
-                config_file_path.parent).replace(path, '')
-
-        question_answer_tokenizer = AutoTokenizer.from_pretrained(model_path)
-        question_answer_model = AutoModelForQuestionAnswering.from_pretrained(model_path)
-
-        current_pipeline = pipeline('question-answering',
-                                    model=question_answer_model,
-                                    tokenizer=question_answer_tokenizer,
-                                    device=device)
-
-        pipelines[model_name] = current_pipeline
-        # Sets the first model found as the default one.
-        if default_pipeline is None:
-            default_pipeline = current_pipeline
-        print(f"Model loaded: $model_name")
-    return pipelines, default_pipeline
+from sentence_transformers import SentenceTransformer
 
 
 class Model:
-
     def __init__(self, path: str):
         PATH_ENV_VARIABLE = "MODELS_PATH"
         CPU_GPU_DEVICE_VARIABLE = "CPU_GPU_DEVICE"
@@ -87,7 +19,12 @@ class Model:
         '''
         self.device = int(environ[CPU_GPU_DEVICE_VARIABLE]) if environ.get(CPU_GPU_DEVICE_VARIABLE) is not None else -1
 
-        self.pipelines, self.default_pipeline = load_models(self.path, self.device)
+
+class ModelQA(Model):
+
+    def __init__(self, path: str):
+        super().__init__(path+"/qa")
+        self.pipelines, self.default_pipeline = self.load_models()
 
     def get_pipeline(self, model_name):
         """
@@ -121,4 +58,108 @@ class Model:
         return answers
 
     def reload_models(self):
-        self.pipelines, self.default_pipeline = load_models(self.path, self.device)
+        self.pipelines, self.default_pipeline = self.load_models()
+
+    def load_models(self):
+        """
+        Iterates over a specific path and loads all models available.
+        For each model a pipeline is created and stored in a pipelines map,
+        where the key is the model name (as defined in the config.json file)
+        or the folder path if that value is not present.
+        @return: Tuple consisting of: a map of pipelines and a default pipeline.
+        """
+        print("Loading QA models...")
+        pipelines = {}
+        default_pipeline = None
+        config_file = 'config.json'
+        for config_file_path in Path(self.path).rglob(config_file):
+            model_path = str(config_file_path.parent)
+
+            name_path_key = '_name_or_path'
+            with open(config_file_path) as jsonFile:
+                json_object = json.load(jsonFile)
+                # Looks for the file name in the config file. If not present then it will use the path as the name.
+                model_name = json_object[name_path_key] if name_path_key in json_object else str(
+                    config_file_path.parent).replace(self.path, '')
+
+            question_answer_tokenizer = AutoTokenizer.from_pretrained(model_path)
+            question_answer_model = AutoModelForQuestionAnswering.from_pretrained(model_path)
+
+            current_pipeline = pipeline('question-answering',
+                                        model=question_answer_model,
+                                        tokenizer=question_answer_tokenizer,
+                                        device=self.device)
+
+            pipelines[model_name] = current_pipeline
+            # Sets the first model found as the default one.
+            if default_pipeline is None:
+                default_pipeline = current_pipeline
+            print(f"Model loaded: $model_name")
+        return pipelines, default_pipeline
+
+
+class ModelST(Model):
+
+    def __init__(self, path: str):
+        super().__init__(path + "/st")
+        self.device = "cpu" if self.device == -1 else "cuda"
+        self.pipelines = self.load_models()
+
+    def get_pipeline(self, model_name):
+        """
+        Chooses which pipeline to use.
+        If no model_name is specific then use the default pipeline.
+        if a model_name is provided but it doesn't exist, then return the default pipeline.
+        @param model_name: Name of the model.
+        @return: Pipeline associated to the model name.
+        """
+        if model_name is not None and model_name in self.pipelines.keys():
+            return self.pipelines[model_name]
+        return None
+
+    def reload_models(self):
+        self.pipelines = self.load_models()
+
+    def load_models(self):
+        """
+        Iterates over a specific path and loads all models available.
+        For each model a pipeline is created and stored in a pipelines map,
+        where the key is the model name (as defined in the config.json file)
+        or the folder path if that value is not present.
+        @return: Tuple consisting of: a map of pipelines and a default pipeline.
+        """
+
+        print("Loading Sentence Transformer models...")
+        pipelines = {}
+        config_file = 'config.json'
+        for config_file_path in Path(self.path).rglob(config_file):
+            model_path = str(config_file_path.parent)
+
+            name_path_key = '_name_or_path'
+            with open(config_file_path) as jsonFile:
+                json_object = json.load(jsonFile)
+                # Looks for the file name in the config file. If not present then it will use the path as the name.
+                model_name = json_object[name_path_key] if name_path_key in json_object else str(
+                    config_file_path.parent).replace(self.path, '')
+
+            sentence_transformer_model = SentenceTransformer(model_path, device=self.device)
+
+            pipelines[model_name] = sentence_transformer_model
+            print(f"Model loaded: $model_name")
+        return pipelines
+
+    def encode(self, document_id, texts, model_name):
+        """
+        Encodes the texts.
+        @param document_id: document id.
+        @param texts: texts to be encoded.
+        @param model_name: Model name to use.
+        @return: An embedding and the id of the document.
+        """
+
+        model = SentenceTransformer(model_name)
+        texts_encoded = model.encode(texts)
+
+        return {"id": document_id, "result": texts_encoded.tolist()}
+
+

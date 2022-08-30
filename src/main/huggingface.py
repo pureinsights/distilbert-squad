@@ -6,7 +6,8 @@ import numpy as np
 import spacy
 import torch
 from flask import request, Response, Blueprint
-from src.main.model import Model, download_models
+from src.main.model import ModelQA, ModelST
+from src.main.download import download_models
 from sklearn.feature_extraction.text import TfidfVectorizer
 from transformers import AutoModelForMaskedLM, AutoTokenizer, TrainingArguments, Trainer
 
@@ -15,11 +16,13 @@ is_training = False
 nlp = None
 default_batch = 2
 mimetype = 'application/json'
+path = "../models"
 
 '''
 A path is passed when creating models. This can also be overriden as a environmental variable.
 '''
-model = Model(path="../models")
+modelQA = ModelQA(path=path)
+modelST = ModelST(path=path)
 
 
 @huggingface_api.route('/models', methods=['GET'])
@@ -30,10 +33,14 @@ def models():
     """
     response = []
 
-    model.reload_models()
+    modelQA.reload_models()
+    modelST.reload_models()
 
-    for pipeline_name in model.pipelines:
-        response.append(pipeline_name)
+    for pipeline_name in modelQA.pipelines:
+        response.append(modelQA.path+"/"+pipeline_name)
+
+    for pipeline_name in modelST.pipelines:
+        response.append(modelST.path+"/"+pipeline_name)
 
     return Response(json.dumps(response), mimetype=mimetype)
 
@@ -111,7 +118,7 @@ def predict():
 
     texts = [chunk['text'] for chunk in chunks]
     # Gets predictions for all texts at once.
-    predictions = model.predict(texts, question, model_name)
+    predictions = modelQA.predict(texts, question, model_name)
     for index, prediction in enumerate(predictions):
         chunk = chunks[index]
         prediction['id'] = chunk['id']
@@ -136,17 +143,50 @@ def download_model():
     if not body:
         return error_message('Missing input body', 400)
 
-    if 'models' not in body:
-        return error_message('To download a model, the name(s) should be specified', 400)
+    paths = {
+        "sentencetransformer": modelST.path,
+        "questionandanswer": modelQA.path,
+        "default": modelQA.path
+    }
 
-    models_to_process = [{"model": curr_model} for curr_model in body['models']]
+    response, is_error_found = download_models(paths, body)
 
-    response, is_error_found = download_models(models_to_process, model.path)
-
-    model.reload_models()
+    modelQA.reload_models()
+    modelST.reload_models()
 
     return error_message(response, 400) if is_error_found \
         else Response(json.dumps(response), mimetype=mimetype)
+
+
+@huggingface_api.route('/encode', methods=['POST'])
+def encode():
+    """
+    Predicts an answer given some chunks of text.
+    @return: Response in JSON format.
+    """
+    body = request.get_json()
+
+    if not body:
+        return error_message('Missing input body', 400)
+
+    if 'id' not in body:
+        return error_message('The encode needs an id', 400)
+
+    if 'model' not in body:
+        return error_message('The encode needs the model to be specified', 400)
+
+    if 'texts' not in body:
+        return error_message('At least a text must be added to encode', 400)
+
+    model_name = body['model'] if 'model' in body else None
+    texts = body['texts']
+    document_id = body['id']
+
+    # Gets predictions for all texts at once.
+    encoded_texts = modelST.encode(document_id, texts, model_name)
+
+    return Response(json.dumps(encoded_texts),
+                    mimetype=mimetype)
 
 
 def highlight(text, answer, style):
