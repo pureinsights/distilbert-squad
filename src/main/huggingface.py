@@ -17,6 +17,7 @@ nlp = None
 default_batch = 2
 mimetype = 'application/json'
 path = "../models"
+missing_body_error_msg = 'Missing input body'
 
 '''
 A path is passed when creating models. This can also be overriden as a environmental variable.
@@ -66,7 +67,7 @@ def train_vocab():
     body = request.get_json()
 
     if not body:
-        return error_message('Missing input body', 400)
+        return error_message(missing_body_error_msg, 400)
     if 'model' not in body:
         return error_message('Missing parameter model', 400)
     if 'output_path' not in body:
@@ -101,7 +102,7 @@ def predict():
     body = request.get_json()
 
     if not body:
-        return error_message('Missing input body', 400)
+        return error_message(missing_body_error_msg, 400)
 
     if 'question' not in body:
         return error_message('The prediction needs a question', 400)
@@ -141,7 +142,7 @@ def download_model():
     body = request.get_json()
 
     if not body:
-        return error_message('Missing input body', 400)
+        return error_message(missing_body_error_msg, 400)
 
     paths = {
         "sentencetransformer": modelST.path,
@@ -167,7 +168,7 @@ def encode():
     body = request.get_json()
 
     if not body:
-        return error_message('Missing input body', 400)
+        return error_message(missing_body_error_msg, 400)
 
     if 'id' not in body:
         return error_message('The encode needs an id', 400)
