@@ -453,6 +453,25 @@ class TestModel(unittest.TestCase):
         self.assertEqual(str(response_answer), answer)
         shutil.rmtree(MODEL_ROOT)
 
+    def test_get_models_stored(self):
+        response = {}
+
+        model_st_class = ModelST(MODEL_ROOT)
+        model_qa_class = ModelST(MODEL_ROOT)
+
+        model_st_class.pipelines = ["./models_test/st/model1", "./models_test/st/model2"]
+        model_qa_class.pipelines = ["./models_test/qa/model3"]
+
+        model_st_class.field_name = "sentenceTransformer"
+        model_qa_class.field_name = "questionAndAnswer"
+
+        response = model_st_class.get_models_stored(response)
+        response = model_qa_class.get_models_stored(response)
+
+        self.assertEqual(str(response), "{'sentenceTransformer': ['./models_test/st/model1', "
+                                        "'./models_test/st/model2'], 'questionAndAnswer': ["
+                                        "'./models_test/qa/model3']}")
+
 
 if __name__ == '__main__':
     unittest.main()

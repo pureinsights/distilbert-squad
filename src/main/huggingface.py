@@ -32,16 +32,13 @@ def models():
     Lists all available models.
     @return: JSON response with a list of models.
     """
-    response = []
+    response = {}
 
     modelQA.reload_models()
     modelST.reload_models()
 
-    for pipeline_name in modelQA.pipelines:
-        response.append(modelQA.path+"/"+pipeline_name)
-
-    for pipeline_name in modelST.pipelines:
-        response.append(modelST.path+"/"+pipeline_name)
+    response = modelST.get_models_stored(response)
+    response = modelQA.get_models_stored(response)
 
     return Response(json.dumps(response), mimetype=mimetype)
 
@@ -145,8 +142,8 @@ def download_model():
         return error_message(missing_body_error_msg, 400)
 
     paths = {
-        "sentencetransformer": modelST.path,
-        "questionandanswer": modelQA.path,
+        modelST.field_name.lower(): modelST.path,
+        modelQA.field_name.lower(): modelQA.path,
         "default": modelQA.path
     }
 

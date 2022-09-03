@@ -19,12 +19,23 @@ class Model:
         '''
         self.device = int(environ[CPU_GPU_DEVICE_VARIABLE]) if environ.get(CPU_GPU_DEVICE_VARIABLE) is not None else -1
 
+    def get_models_stored(self, response):
+        field_name = self.field_name
+        for pipeline_name in self.pipelines:
+            if field_name in response:
+                response[field_name].append(pipeline_name)
+            else:
+                response[field_name] = [pipeline_name]
+
+        return response
+
 
 class ModelQA(Model):
 
     def __init__(self, path: str):
         super().__init__(path)
         self.path += "/qa"
+        self.field_name = "questionAndAnswer"
         self.pipelines, self.default_pipeline = self.load_models()
 
     def get_pipeline(self, model_name):
@@ -104,6 +115,7 @@ class ModelST(Model):
     def __init__(self, path: str):
         super().__init__(path)
         self.path += "/st"
+        self.field_name = "sentenceTransformer"
         self.device = "cpu" if self.device == -1 else "cuda"
         self.pipelines = self.load_models()
 

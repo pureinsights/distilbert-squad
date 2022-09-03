@@ -51,8 +51,8 @@ class TestEndpoint(unittest.TestCase):
 
         data = response.get_data(as_text=True)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(data, '["./models_test/qa/deepset/roberta-base-squad2", '
-                               '"./models_test/st/deepset/roberta-base-squad2"]')
+        self.assertEqual(data, '{"sentenceTransformer": ["deepset/roberta-base-squad2"], "questionAndAnswer": ['
+                               '"deepset/roberta-base-squad2"]}')
 
     @mock.patch('huggingface_test.input')
     def test_predict(self, mock_input):
