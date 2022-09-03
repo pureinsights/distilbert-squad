@@ -23,7 +23,8 @@ class Model:
 class ModelQA(Model):
 
     def __init__(self, path: str):
-        super().__init__(path+"/qa")
+        super().__init__(path)
+        self.path += "/qa"
         self.pipelines, self.default_pipeline = self.load_models()
 
     def get_pipeline(self, model_name):
@@ -101,7 +102,8 @@ class ModelQA(Model):
 class ModelST(Model):
 
     def __init__(self, path: str):
-        super().__init__(path + "/st")
+        super().__init__(path)
+        self.path += "/st"
         self.device = "cpu" if self.device == -1 else "cuda"
         self.pipelines = self.load_models()
 
