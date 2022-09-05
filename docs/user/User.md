@@ -15,7 +15,6 @@ First and foremost, you need to download models locally. For this, `init_models.
 
 ```python
 models = [{"model": 'deepset/roberta-base-squad2'},
-          {"model": 'oliverproud/distilbert-finetuned-model'},
           {"model": 'mrm8488/distilbert-multi-finetuned-for-xqua-on-tydiqa'},
           {"model": 'distilbert-base-cased-distilled-squad'}]
 path = "./models"
@@ -107,8 +106,7 @@ Sample Result:
 [
     "{path}/deepset/roberta-base-squad2",
     "{path}/distilbert-base-cased-distilled-squad",
-    "{path}/mrm8488/distilbert-multi-finetuned-for-xqua-on-tydiqa",
-    "{path}/models\\oliverproud\\distilbert-finetuned-model"
+    "{path}/mrm8488/distilbert-multi-finetuned-for-xqua-on-tydiqa"
 ]
 ```
 

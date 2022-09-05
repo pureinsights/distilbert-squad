@@ -61,37 +61,39 @@ class TestDownload(unittest.TestCase):
         ]
 
         answer1 = ("{'questionAndAnswer': [{'model': 'sshleifer/tiny-distilbert-base-cased-distilled-squad', "
-                   "'path': './models_test/qa/sshleifer/tiny-distilbert-base-cased-distilled-squad/', "
+                   "'path': './models_test/questionAndAnswer/sshleifer/tiny-distilbert-base-cased-distilled-squad/', "
                    "'status': 'Model downloaded'}]}", False)
 
         answer2 = ("{'sentenceTransformer': [{'model': 'sshleifer/tiny-distilbert-base-cased-distilled-squad', "
-                   "'path': './models_test/st/sshleifer/tiny-distilbert-base-cased-distilled-squad/', "
+                   "'path': './models_test/sentenceTransformer/sshleifer/tiny-distilbert-base-cased-distilled-squad/', "
                    "'status': 'Model downloaded'}]}", False)
 
         answer3 = ("{'questionAndAnswer': [{'model': 'bert-base-uncased', 'path': "
-                   "'./models_test/qa/bert-base-uncased/', 'status': 'Model downloaded'}]}", False)
+                   "'./models_test/questionAndAnswer/bert-base-uncased/', 'status': 'Model downloaded'}]}", False)
 
         answer4 = ("{'sentenceTransformer': [{'model': 'bert-base-uncased', 'path': "
-                   "'./models_test/st/bert-base-uncased/', 'status': 'Model downloaded'}]}", False)
+                   "'./models_test/sentenceTransformer/bert-base-uncased/', 'status': 'Model downloaded'}]}", False)
 
         answer5 = ("{'questionAndAnswer': [{'model': 'sshleifer/tiny-distilbert-base-cased-distilled-squad', "
-                   "'path': './models_test/qa/sshleifer/tiny-distilbert-base-cased-distilled-squad/', "
+                   "'path': './models_test/questionAndAnswer/sshleifer/tiny-distilbert-base-cased-distilled-squad/', "
                    "'status': 'Model exists'}, {'model': 'noneexistant_model', 'status': \"We couldn't connect to "
                    "'https://huggingface.co/' to load this model and it looks like noneexistant_model is not the path "
                    "to a directory conaining a config.json file.\\nCheckout your internet connection or see how to "
                    "run the library in offline mode at "
                    "'https://huggingface.co/docs/transformers/installation#offline-mode'.\"}, {'model': "
-                   "'bert-base-uncased', 'path': './models_test/qa/bert-base-uncased/', 'status': 'Model exists'}]}",
+                   "'bert-base-uncased', 'path': './models_test/questionAndAnswer/bert-base-uncased/', 'status': "
+                   "'Model exists'}]}",
                    True)
 
         answer6 = ("{'sentenceTransformer': [{'model': 'sshleifer/tiny-distilbert-base-cased-distilled-squad', "
-                   "'path': './models_test/st/sshleifer/tiny-distilbert-base-cased-distilled-squad/', "
+                   "'path': './models_test/sentenceTransformer/sshleifer/tiny-distilbert-base-cased-distilled-squad/', "
                    "'status': 'Model exists'}, {'model': 'noneexistant_model', 'status': \"We couldn't connect to "
                    "'https://huggingface.co/' to load this model and it looks like noneexistant_model is not the path "
                    "to a directory conaining a config.json file.\\nCheckout your internet connection or see how to run "
                    "the library in offline mode at "
                    "'https://huggingface.co/docs/transformers/installation#offline-mode'.\"}, {'model': "
-                   "'bert-base-uncased', 'path': './models_test/st/bert-base-uncased/', 'status': 'Model exists'}]}",
+                   "'bert-base-uncased', 'path': './models_test/sentenceTransformer/bert-base-uncased/', 'status': "
+                   "'Model exists'}]}",
                    True)
 
         models_downloaded1, is_error_found1 = download_models(PATHS_TO_DOWNLOAD, {"questionAndAnswer": models})

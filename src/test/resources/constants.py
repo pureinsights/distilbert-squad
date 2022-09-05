@@ -1,8 +1,8 @@
 MODELS_QA = {"questionAndAnswer": ['deepset/roberta-base-squad2']}
 MODELS_ST = {"sentenceTransformer": ['deepset/roberta-base-squad2']}
 MODEL_ROOT = "./models_test"
-MODEL_ROOT_QA = "./models_test/qa"
-MODEL_ROOT_ST = "./models_test/st"
+MODEL_ROOT_QA = "./models_test/questionAndAnswer"
+MODEL_ROOT_ST = "./models_test/sentenceTransformer"
 
 CONTENTTYPE = 'application/json'
 

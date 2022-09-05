@@ -6,7 +6,7 @@ import numpy as np
 import spacy
 import torch
 from flask import request, Response, Blueprint
-from src.main.model import ModelQA, ModelST
+from src.main.model import ModelQuestionAnswer, ModelSentenceTransformer
 from src.main.download import download_models
 from sklearn.feature_extraction.text import TfidfVectorizer
 from transformers import AutoModelForMaskedLM, AutoTokenizer, TrainingArguments, Trainer
@@ -22,8 +22,8 @@ missing_body_error_msg = 'Missing input body'
 '''
 A path is passed when creating models. This can also be overriden as a environmental variable.
 '''
-modelQA = ModelQA(path=path)
-modelST = ModelST(path=path)
+modelQuestionAnswer = ModelQuestionAnswer(path=path)
+modelSentenceTransformer = ModelSentenceTransformer(path=path)
 
 
 @huggingface_api.route('/models', methods=['GET'])
@@ -34,11 +34,11 @@ def models():
     """
     response = {}
 
-    modelQA.reload_models()
-    modelST.reload_models()
+    modelQuestionAnswer.reload_models()
+    modelSentenceTransformer.reload_models()
 
-    response = modelST.get_models_stored(response)
-    response = modelQA.get_models_stored(response)
+    response = modelSentenceTransformer.get_models_stored(response)
+    response = modelQuestionAnswer.get_models_stored(response)
 
     return Response(json.dumps(response), mimetype=mimetype)
 
@@ -116,7 +116,7 @@ def predict():
 
     texts = [chunk['text'] for chunk in chunks]
     # Gets predictions for all texts at once.
-    predictions = modelQA.predict(texts, question, model_name)
+    predictions = modelQuestionAnswer.predict(texts, question, model_name)
     for index, prediction in enumerate(predictions):
         chunk = chunks[index]
         prediction['id'] = chunk['id']
@@ -142,15 +142,15 @@ def download_model():
         return error_message(missing_body_error_msg, 400)
 
     paths = {
-        modelST.field_name.lower(): modelST.path,
-        modelQA.field_name.lower(): modelQA.path,
-        "default": modelQA.path
+        modelSentenceTransformer.field_name.lower(): modelSentenceTransformer.path,
+        modelQuestionAnswer.field_name.lower(): modelQuestionAnswer.path,
+        "default": modelQuestionAnswer.path
     }
 
     response, is_error_found = download_models(paths, body)
 
-    modelQA.reload_models()
-    modelST.reload_models()
+    modelQuestionAnswer.reload_models()
+    modelSentenceTransformer.reload_models()
 
     return error_message(response, 400) if is_error_found \
         else Response(json.dumps(response), mimetype=mimetype)
@@ -181,7 +181,7 @@ def encode():
     document_id = body['id']
 
     # Gets predictions for all texts at once.
-    encoded_texts = modelST.encode(document_id, texts, model_name)
+    encoded_texts = modelSentenceTransformer.encode(document_id, texts, model_name)
 
     return Response(json.dumps(encoded_texts),
                     mimetype=mimetype)

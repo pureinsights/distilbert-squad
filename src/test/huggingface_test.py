@@ -9,7 +9,7 @@ import json
 import spacy
 
 import src.main.huggingface as huggingface
-from src.main.model import ModelQA, ModelST
+from src.main.model import ModelQuestionAnswer, ModelSentenceTransformer
 from src.main.download import download_models
 
 from src.test.resources.constants import MODELS_QA, MODEL_ROOT, PATHS_TO_DOWNLOAD, MODEL_ROOT_TRAINED, \
@@ -39,8 +39,8 @@ class TestEndpoint(unittest.TestCase):
         download_models(PATHS_TO_DOWNLOAD, MODELS_ST)
 
     def setUp(self):
-        huggingface.modelQA = ModelQA(MODEL_ROOT)
-        huggingface.modelST = ModelST(MODEL_ROOT)
+        huggingface.modelQuestionAnswer = ModelQuestionAnswer(MODEL_ROOT)
+        huggingface.modelSentenceTransformer = ModelSentenceTransformer(MODEL_ROOT)
 
     @mock.patch('huggingface_test.input')
     def test_models(self, mock_input):
@@ -61,11 +61,26 @@ class TestEndpoint(unittest.TestCase):
             "question": "How many games are required to win the FA Cup?",
             "chunks": [
                 {
-                    "text": "The FA Cup is open to any eligible club down to Level 10 of the English football league system – 20 professional clubs in the Premier League (level 1),72 professional clubs in the English Football League (levels 2 to 4), and several hundred non-League teams in steps 1 to 6 of the National League System (levels 5 to 10). A record 763 clubs competed in 2011–12. The tournament consists of 12 randomly drawn rounds followed by the semi-finals and the final. Entrants are not seeded, although a system of byes based on league level ensures higher ranked teams enter in later rounds.  The minimum number of games needed to win, depending on which round a team enters the competition, ranges from six to fourteen.",
+                    "text": "The FA Cup is open to any eligible club down to Level 10 of the English football league "
+                            "system – 20 professional clubs in the Premier League (level 1),72 professional clubs in "
+                            "the English Football League (levels 2 to 4), and several hundred non-League teams in "
+                            "steps 1 to 6 of the National League System (levels 5 to 10). A record 763 clubs competed "
+                            "in 2011–12. The tournament consists of 12 randomly drawn rounds followed by the "
+                            "semi-finals and the final. Entrants are not seeded, although a system of byes based on "
+                            "league level ensures higher ranked teams enter in later rounds.  The minimum number of "
+                            "games needed to win, depending on which round a team enters the competition, ranges from "
+                            "six to fourteen.",
                     "id": "1"
                 },
                 {
-                    "text": "The first six rounds are the Qualifying Competition, from which 32 teams progress to the first round of the Competition Proper, meeting the first of the 48 professional teams from Leagues One and Two. The last entrants are the Premier League and Championship clubs, into the draw for the Third Round Proper.[2] In the modern era, only one non-League team has ever reached the quarter-finals, and teams below Level 2 have never reached the final.[note 1] As a result, significant focus is given to the smaller teams who progress furthest, especially if they achieve an unlikely \"giant-killing\" victory.",
+                    "text": "The first six rounds are the Qualifying Competition, from which 32 teams progress to the "
+                            "first round of the Competition Proper, meeting the first of the 48 professional teams "
+                            "from Leagues One and Two. The last entrants are the Premier League and Championship "
+                            "clubs, into the draw for the Third Round Proper.[2] In the modern era, "
+                            "only one non-League team has ever reached the quarter-finals, and teams below Level 2 "
+                            "have never reached the final.[note 1] As a result, significant focus is given to the "
+                            "smaller teams who progress furthest, especially if they achieve an unlikely "
+                            "\"giant-killing\" victory.",
                     "id": "2"
                 }
             ]
@@ -99,11 +114,26 @@ class TestEndpoint(unittest.TestCase):
             "model": TINY_DISTILBERT_MODEL,
             "chunks": [
                 {
-                    "text": "The FA Cup is open to any eligible club down to Level 10 of the English football league system – 20 professional clubs in the Premier League (level 1),72 professional clubs in the English Football League (levels 2 to 4), and several hundred non-League teams in steps 1 to 6 of the National League System (levels 5 to 10). A record 763 clubs competed in 2011–12. The tournament consists of 12 randomly drawn rounds followed by the semi-finals and the final. Entrants are not seeded, although a system of byes based on league level ensures higher ranked teams enter in later rounds.  The minimum number of games needed to win, depending on which round a team enters the competition, ranges from six to fourteen.",
+                    "text": "The FA Cup is open to any eligible club down to Level 10 of the English football league "
+                            "system – 20 professional clubs in the Premier League (level 1),72 professional clubs in "
+                            "the English Football League (levels 2 to 4), and several hundred non-League teams in "
+                            "steps 1 to 6 of the National League System (levels 5 to 10). A record 763 clubs competed "
+                            "in 2011–12. The tournament consists of 12 randomly drawn rounds followed by the "
+                            "semi-finals and the final. Entrants are not seeded, although a system of byes based on "
+                            "league level ensures higher ranked teams enter in later rounds.  The minimum number of "
+                            "games needed to win, depending on which round a team enters the competition, ranges from "
+                            "six to fourteen.",
                     "id": "1"
                 },
                 {
-                    "text": "The first six rounds are the Qualifying Competition, from which 32 teams progress to the first round of the Competition Proper, meeting the first of the 48 professional teams from Leagues One and Two. The last entrants are the Premier League and Championship clubs, into the draw for the Third Round Proper.[2] In the modern era, only one non-League team has ever reached the quarter-finals, and teams below Level 2 have never reached the final.[note 1] As a result, significant focus is given to the smaller teams who progress furthest, especially if they achieve an unlikely \"giant-killing\" victory.",
+                    "text": "The first six rounds are the Qualifying Competition, from which 32 teams progress to the "
+                            "first round of the Competition Proper, meeting the first of the 48 professional teams "
+                            "from Leagues One and Two. The last entrants are the Premier League and Championship "
+                            "clubs, into the draw for the Third Round Proper.[2] In the modern era, "
+                            "only one non-League team has ever reached the quarter-finals, and teams below Level 2 "
+                            "have never reached the final.[note 1] As a result, significant focus is given to the "
+                            "smaller teams who progress furthest, especially if they achieve an unlikely "
+                            "\"giant-killing\" victory.",
                     "id": "2"
                 }
             ]
@@ -115,8 +145,10 @@ class TestEndpoint(unittest.TestCase):
         }
 
         _, status_code1 = get_post_response(tester, PREDICT_ENDPOINT, None, CONTENTTYPE)
-        response2, status_code2 = get_post_response(tester, PREDICT_ENDPOINT, body_no_question, CONTENTTYPE, convert_json=True)
-        response3, status_code3 = get_post_response(tester, PREDICT_ENDPOINT, body_no_chunks, CONTENTTYPE, convert_json=True)
+        response2, status_code2 = get_post_response(tester, PREDICT_ENDPOINT, body_no_question, CONTENTTYPE,
+                                                    convert_json=True)
+        response3, status_code3 = get_post_response(tester, PREDICT_ENDPOINT, body_no_chunks, CONTENTTYPE,
+                                                    convert_json=True)
 
         self.assertEqual(status_code1, 400)
 
@@ -176,10 +208,14 @@ class TestEndpoint(unittest.TestCase):
         }
 
         _, status_code1 = get_post_response(tester, TRAIN_ENDPOINT, None, CONTENTTYPE)
-        response2, status_code2 = get_post_response(tester, TRAIN_ENDPOINT, body_no_output_path, CONTENTTYPE, convert_json=True)
-        response3, status_code3 = get_post_response(tester, TRAIN_ENDPOINT, body_no_model, CONTENTTYPE, convert_json=True)
-        response4, status_code4 = get_post_response(tester, TRAIN_ENDPOINT, body_no_data, CONTENTTYPE, convert_json=True)
-        response5, status_code5 = get_post_response(tester, TRAIN_ENDPOINT, body_data_empty, CONTENTTYPE, convert_json=True)
+        response2, status_code2 = get_post_response(tester, TRAIN_ENDPOINT, body_no_output_path, CONTENTTYPE,
+                                                    convert_json=True)
+        response3, status_code3 = get_post_response(tester, TRAIN_ENDPOINT, body_no_model, CONTENTTYPE,
+                                                    convert_json=True)
+        response4, status_code4 = get_post_response(tester, TRAIN_ENDPOINT, body_no_data, CONTENTTYPE,
+                                                    convert_json=True)
+        response5, status_code5 = get_post_response(tester, TRAIN_ENDPOINT, body_data_empty, CONTENTTYPE,
+                                                    convert_json=True)
 
         self.assertEqual(status_code1, 400)
 
@@ -202,8 +238,8 @@ class TestEndpoint(unittest.TestCase):
         }
 
         answer1 = '{"questionAndAnswer": [{"model": "sshleifer/tiny-distilbert-base-cased-distilled-squad", ' \
-                  '"path": "./models_test/qa/sshleifer/tiny-distilbert-base-cased-distilled-squad/", "status": "Model ' \
-                  'downloaded"}]}'
+                  '"path": "./models_test/questionAndAnswer/sshleifer/tiny-distilbert-base-cased-distilled-squad/", ' \
+                  '"status": "Model downloaded"}]}'
 
         body2 = {
             "questionAndAnswer": [
@@ -213,9 +249,9 @@ class TestEndpoint(unittest.TestCase):
         }
 
         answer2 = '{"questionAndAnswer": [{"model": "sshleifer/tiny-distilbert-base-cased-distilled-squad", ' \
-                  '"path": "./models_test/qa/sshleifer/tiny-distilbert-base-cased-distilled-squad/", "status": "Model ' \
-                  'exists"}, {"model": "bert-base-uncased", "path": "./models_test/qa/bert-base-uncased/", ' \
-                  '"status": "Model downloaded"}]}'
+                  '"path": "./models_test/questionAndAnswer/sshleifer/tiny-distilbert-base-cased-distilled-squad/", ' \
+                  '"status": "Model exists"}, {"model": "bert-base-uncased", "path": ' \
+                  '"./models_test/questionAndAnswer/bert-base-uncased/", "status": "Model downloaded"}]}'
 
         body3 = {
             "questionAndAnswer": [
@@ -227,18 +263,21 @@ class TestEndpoint(unittest.TestCase):
 
         answer3 = "{'message': {'questionAndAnswer': [{'model': " \
                   "'sshleifer/tiny-distilbert-base-cased-distilled-squad', 'path': " \
-                  "'./models_test/qa/sshleifer/tiny-distilbert-base-cased-distilled-squad/', 'status': 'Model " \
+                  "'./models_test/questionAndAnswer/sshleifer/tiny-distilbert-base-cased-distilled-squad/', 'status': " \
+                  "'Model " \
                   "exists'}, {'model': 'noneexistant_model', 'status': \"We couldn't connect to " \
                   "'https://huggingface.co/' to load this model and it looks like noneexistant_model is not the path " \
                   "to a directory conaining a config.json file.\\nCheckout your internet connection or see how to run " \
                   "the library in offline mode at " \
                   "'https://huggingface.co/docs/transformers/installation#offline-mode'.\"}, {'model': " \
-                  "'bert-base-uncased', 'path': './models_test/qa/bert-base-uncased/', 'status': 'Model exists'}]}, " \
+                  "'bert-base-uncased', 'path': './models_test/questionAndAnswer/bert-base-uncased/', 'status': " \
+                  "'Model exists'}]}, " \
                   "'status': 400}"
 
         response1, status_code1 = get_post_response(tester, DOWNLOAD_MODEL_ENDPOINT, body1, CONTENTTYPE)
         response2, status_code2 = get_post_response(tester, DOWNLOAD_MODEL_ENDPOINT, body2, CONTENTTYPE)
-        response3, status_code3 = get_post_response(tester, DOWNLOAD_MODEL_ENDPOINT, body3, CONTENTTYPE, convert_json=True)
+        response3, status_code3 = get_post_response(tester, DOWNLOAD_MODEL_ENDPOINT, body3, CONTENTTYPE,
+                                                    convert_json=True)
         del response3["timestamp"]
 
         self.assertEqual(status_code1, 200)
@@ -250,8 +289,8 @@ class TestEndpoint(unittest.TestCase):
         self.assertEqual(status_code3, 400)
         self.assertEqual(str(response3), answer3)
 
-        shutil.rmtree('./models_test/qa/sshleifer')
-        shutil.rmtree('./models_test/qa/bert-base-uncased')
+        shutil.rmtree('./models_test/questionAndAnswer/sshleifer')
+        shutil.rmtree('./models_test/questionAndAnswer/bert-base-uncased')
 
     @mock.patch('huggingface_test.input')
     def test_encode(self, mock_input):

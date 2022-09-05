@@ -3,7 +3,7 @@ import unittest
 from transformers import pipelines
 from sentence_transformers import SentenceTransformer
 
-from src.main.model import ModelQA, ModelST
+from src.main.model import ModelQuestionAnswer, ModelSentenceTransformer
 from src.main.download import download_models
 from src.test.resources.constants import TINY_DISTILBERT_MODEL, MODEL_ROOT, PATHS_TO_DOWNLOAD, DATA_TEST_SINGLE_TEXT,\
                                          MODELS_ST, MODELS_QA
@@ -16,7 +16,7 @@ class TestModel(unittest.TestCase):
         model = {"questionAndAnswer": [TINY_DISTILBERT_MODEL]}
         download_models(PATHS_TO_DOWNLOAD, model)
 
-        model_class = ModelQA(MODEL_ROOT)
+        model_class = ModelQuestionAnswer(MODEL_ROOT)
         pipelines_, default_pipeline = model_class.load_models()
 
         self.assertIsInstance(default_pipeline, pipelines.question_answering.QuestionAnsweringPipeline)
@@ -27,7 +27,7 @@ class TestModel(unittest.TestCase):
         model = {"sentenceTransformer": [TINY_DISTILBERT_MODEL]}
         download_models(PATHS_TO_DOWNLOAD, model)
 
-        model_class = ModelST(MODEL_ROOT)
+        model_class = ModelSentenceTransformer(MODEL_ROOT)
         pipelines_ = model_class.load_models()
 
         self.assertIsInstance(pipelines_[TINY_DISTILBERT_MODEL], SentenceTransformer)
@@ -37,7 +37,7 @@ class TestModel(unittest.TestCase):
         model = {"questionAndAnswer": [TINY_DISTILBERT_MODEL]}
         download_models(PATHS_TO_DOWNLOAD, model)
 
-        model_class = ModelQA(MODEL_ROOT)
+        model_class = ModelQuestionAnswer(MODEL_ROOT)
         self.assertIsInstance(model_class.get_pipeline(TINY_DISTILBERT_MODEL),
                               pipelines.question_answering.QuestionAnsweringPipeline)
         shutil.rmtree(MODEL_ROOT)
@@ -46,7 +46,7 @@ class TestModel(unittest.TestCase):
         model = {"sentenceTransformer": [TINY_DISTILBERT_MODEL]}
         download_models(PATHS_TO_DOWNLOAD, model)
 
-        model_class = ModelST(MODEL_ROOT)
+        model_class = ModelSentenceTransformer(MODEL_ROOT)
         self.assertIsInstance(model_class.get_pipeline(TINY_DISTILBERT_MODEL), SentenceTransformer)
         shutil.rmtree(MODEL_ROOT)
 
@@ -58,7 +58,7 @@ class TestModel(unittest.TestCase):
         answer = [{'start': 693, 'end': 708, 'answer': 'six to fourteen'},
                   {'start': 64, 'end': 66, 'answer': '32'}]
 
-        model_class = ModelQA(MODEL_ROOT)
+        model_class = ModelQuestionAnswer(MODEL_ROOT)
         response_answer = remove_scores_from_response(
                                 model_class.predict(DATA_TEST_SINGLE_TEXT, question, 'deepset/roberta-base-squad2'))
         self.assertEqual(response_answer, answer)
@@ -448,7 +448,7 @@ class TestModel(unittest.TestCase):
                  "-0.7898303866386414, -0.8295242190361023, -0.07857048511505127, -0.26519376039505005, " \
                  "1.7459608316421509, -0.21424171328544617, 0.41849014163017273]]}"
 
-        model_class = ModelST(MODEL_ROOT)
+        model_class = ModelSentenceTransformer(MODEL_ROOT)
         response_answer = model_class.encode("123", DATA_TEST_SINGLE_TEXT, 'deepset/roberta-base-squad2')
         self.assertEqual(str(response_answer), answer)
         shutil.rmtree(MODEL_ROOT)
@@ -456,11 +456,12 @@ class TestModel(unittest.TestCase):
     def test_get_models_stored(self):
         response = {}
 
-        model_st_class = ModelST(MODEL_ROOT)
-        model_qa_class = ModelST(MODEL_ROOT)
+        model_st_class = ModelSentenceTransformer(MODEL_ROOT)
+        model_qa_class = ModelSentenceTransformer(MODEL_ROOT)
 
-        model_st_class.pipelines = ["./models_test/st/model1", "./models_test/st/model2"]
-        model_qa_class.pipelines = ["./models_test/qa/model3"]
+        model_st_class.pipelines = ["./models_test/sentenceTransformer/model1", "./models_test/sentenceTransformer"
+                                                                                "/model2"]
+        model_qa_class.pipelines = ["./models_test/questionAndAnswer/model3"]
 
         model_st_class.field_name = "sentenceTransformer"
         model_qa_class.field_name = "questionAndAnswer"
@@ -468,9 +469,9 @@ class TestModel(unittest.TestCase):
         response = model_st_class.get_models_stored(response)
         response = model_qa_class.get_models_stored(response)
 
-        self.assertEqual(str(response), "{'sentenceTransformer': ['./models_test/st/model1', "
-                                        "'./models_test/st/model2'], 'questionAndAnswer': ["
-                                        "'./models_test/qa/model3']}")
+        self.assertEqual(str(response), "{'sentenceTransformer': ['./models_test/sentenceTransformer/model1', "
+                                        "'./models_test/sentenceTransformer/model2'], 'questionAndAnswer': ["
+                                        "'./models_test/questionAndAnswer/model3']}")
 
 
 if __name__ == '__main__':

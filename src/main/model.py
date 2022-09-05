@@ -12,6 +12,7 @@ class Model:
         CPU_GPU_DEVICE_VARIABLE = "CPU_GPU_DEVICE"
         # If an environment variable with MODEL_PATH has been set, then use it.
         self.path = environ[PATH_ENV_VARIABLE] if environ.get(PATH_ENV_VARIABLE) is not None else path
+        self.path += "/" + self.field_name
         '''
         Device ordinal for CPU/GPU support. 
         Setting this to -1 will leverage CPU, >=0 will run the model on the associated CUDA device id.
@@ -30,12 +31,11 @@ class Model:
         return response
 
 
-class ModelQA(Model):
+class ModelQuestionAnswer(Model):
 
     def __init__(self, path: str):
-        super().__init__(path)
-        self.path += "/qa"
         self.field_name = "questionAndAnswer"
+        super().__init__(path)
         self.pipelines, self.default_pipeline = self.load_models()
 
     def get_pipeline(self, model_name):
@@ -110,12 +110,11 @@ class ModelQA(Model):
         return pipelines, default_pipeline
 
 
-class ModelST(Model):
+class ModelSentenceTransformer(Model):
 
     def __init__(self, path: str):
-        super().__init__(path)
-        self.path += "/st"
         self.field_name = "sentenceTransformer"
+        super().__init__(path)
         self.device = "cpu" if self.device == -1 else "cuda"
         self.pipelines = self.load_models()
 

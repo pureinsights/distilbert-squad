@@ -30,7 +30,7 @@ def download_model(path, model_name):
     return model_path, model_exists
 
 
-def download_from_huggingface_qa(model_name, model_path):
+def download_from_huggingface_question_answers(model_name, model_path):
     """
     To download files related to the model and the tokenizer, first it is needed to instantiate the model and the tokenizer,
     which will download the files from Hugging Face's repo. Then these are saved to disk.
@@ -44,7 +44,7 @@ def download_from_huggingface_qa(model_name, model_path):
     tokenizer.save_pretrained(model_path)
 
 
-def download_from_huggingface_st(model_name, model_path):
+def download_from_huggingface_sentence_transformers(model_name, model_path):
     """
     To download files related to the model and the tokenizer, first it is needed to instantiate the model and the tokenizer,
     which will download the files from Hugging Face's repo. Then these are saved to disk.
@@ -95,6 +95,6 @@ def download_from_huggingface(model_name, model_path):
     @return:
     """
     if "/st" in model_path:
-        download_from_huggingface_st(model_name, model_path)
+        download_from_huggingface_sentence_transformers(model_name, model_path)
     else:
-        download_from_huggingface_qa(model_name, model_path)
+        download_from_huggingface_question_answers(model_name, model_path)
