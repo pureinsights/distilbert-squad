@@ -6,7 +6,8 @@ import numpy as np
 import spacy
 import torch
 from flask import request, Response, Blueprint
-from src.main.model import Model
+from src.main.model import ModelQuestionAnswer, ModelSentenceTransformer
+from src.main.download import download_models
 from sklearn.feature_extraction.text import TfidfVectorizer
 from transformers import AutoModelForMaskedLM, AutoTokenizer, TrainingArguments, Trainer
 
@@ -15,11 +16,14 @@ is_training = False
 nlp = None
 default_batch = 2
 mimetype = 'application/json'
+path = "../models"
+missing_body_error_msg = 'Missing input body'
 
 '''
 A path is passed when creating models. This can also be overriden as a environmental variable.
 '''
-model = Model(path="../models")
+modelQuestionAnswer = ModelQuestionAnswer(path=path)
+modelSentenceTransformer = ModelSentenceTransformer(path=path)
 
 
 @huggingface_api.route('/models', methods=['GET'])
@@ -28,13 +32,13 @@ def models():
     Lists all available models.
     @return: JSON response with a list of models.
     """
-    response = []
+    response = {}
 
-    global model
-    model = Model(path=model.path)
+    modelQuestionAnswer.reload_models()
+    modelSentenceTransformer.reload_models()
 
-    for pipeline_name in model.pipelines:
-        response.append(pipeline_name)
+    response = modelSentenceTransformer.get_models_stored(response)
+    response = modelQuestionAnswer.get_models_stored(response)
 
     return Response(json.dumps(response), mimetype=mimetype)
 
@@ -60,7 +64,7 @@ def train_vocab():
     body = request.get_json()
 
     if not body:
-        return error_message('Missing input body', 400)
+        return error_message(missing_body_error_msg, 400)
     if 'model' not in body:
         return error_message('Missing parameter model', 400)
     if 'output_path' not in body:
@@ -95,7 +99,7 @@ def predict():
     body = request.get_json()
 
     if not body:
-        return error_message('Missing input body', 400)
+        return error_message(missing_body_error_msg, 400)
 
     if 'question' not in body:
         return error_message('The prediction needs a question', 400)
@@ -112,7 +116,7 @@ def predict():
 
     texts = [chunk['text'] for chunk in chunks]
     # Gets predictions for all texts at once.
-    predictions = model.predict(texts, question, model_name)
+    predictions = modelQuestionAnswer.predict(texts, question, model_name)
     for index, prediction in enumerate(predictions):
         chunk = chunks[index]
         prediction['id'] = chunk['id']
@@ -123,6 +127,63 @@ def predict():
         response.append(prediction)
 
     return Response(json.dumps(sorted(response, key=lambda answer: answer['score'], reverse=True)),
+                    mimetype=mimetype)
+
+
+@huggingface_api.route('/download-model', methods=['POST'])
+def download_model():
+    """
+    download specified models.
+    @return: Return if the status of downloading models.
+    """
+    body = request.get_json()
+
+    if not body:
+        return error_message(missing_body_error_msg, 400)
+
+    paths = {
+        modelSentenceTransformer.field_name.lower(): modelSentenceTransformer.path,
+        modelQuestionAnswer.field_name.lower(): modelQuestionAnswer.path,
+        "default": modelQuestionAnswer.path
+    }
+
+    response, is_error_found = download_models(paths, body)
+
+    modelQuestionAnswer.reload_models()
+    modelSentenceTransformer.reload_models()
+
+    return error_message(response, 400) if is_error_found \
+        else Response(json.dumps(response), mimetype=mimetype)
+
+
+@huggingface_api.route('/encode', methods=['POST'])
+def encode():
+    """
+    Predicts an answer given some chunks of text.
+    @return: Response in JSON format.
+    """
+    body = request.get_json()
+
+    if not body:
+        return error_message(missing_body_error_msg, 400)
+
+    if 'id' not in body:
+        return error_message('The encode needs an id', 400)
+
+    if 'model' not in body:
+        return error_message('The encode needs the model to be specified', 400)
+
+    if 'texts' not in body:
+        return error_message('At least a text must be added to encode', 400)
+
+    model_name = body['model'] if 'model' in body else None
+    texts = body['texts']
+    document_id = body['id']
+
+    # Gets predictions for all texts at once.
+    encoded_texts = modelSentenceTransformer.encode(document_id, texts, model_name)
+
+    return Response(json.dumps(encoded_texts),
                     mimetype=mimetype)
 
 

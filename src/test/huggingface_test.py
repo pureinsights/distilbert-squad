@@ -9,10 +9,15 @@ import json
 import spacy
 
 import src.main.huggingface as huggingface
-import src.main.model as model
+from src.main.model import ModelQuestionAnswer, ModelSentenceTransformer
+from src.main.download import download_models
 
-from src.test.constants import MODELS, MODEL_ROOT, MODEL_ROOT_TRAINED, TINY_DISTILBERT_MODEL, \
-    PREDICT_ENDPOINT, CONTENTTYPE, DATA_TEST, TRAIN_ENDPOINT
+from src.test.resources.constants import MODELS_QA, MODEL_ROOT, PATHS_TO_DOWNLOAD, MODEL_ROOT_TRAINED, \
+    BERT_UNCASED_MODEL, \
+    TINY_DISTILBERT_MODEL, PREDICT_ENDPOINT, CONTENTTYPE, DATA_TEST, TRAIN_ENDPOINT, DOWNLOAD_MODEL_ENDPOINT, MODELS_ST, \
+    DATA_TEST_SINGLE_TEXT, ENCODE_ENDPOINT
+
+from src.test.resources.functions import remove_scores_from_response, get_post_response
 
 from transformers import AutoModelForMaskedLM, AutoTokenizer
 
@@ -30,10 +35,12 @@ class TestEndpoint(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        model.download_models(MODELS, MODEL_ROOT)
+        download_models(PATHS_TO_DOWNLOAD, MODELS_QA)
+        download_models(PATHS_TO_DOWNLOAD, MODELS_ST)
 
     def setUp(self):
-        huggingface.model = model.Model(MODEL_ROOT)
+        huggingface.modelQuestionAnswer = ModelQuestionAnswer(MODEL_ROOT)
+        huggingface.modelSentenceTransformer = ModelSentenceTransformer(MODEL_ROOT)
 
     @mock.patch('huggingface_test.input')
     def test_models(self, mock_input):
@@ -44,7 +51,8 @@ class TestEndpoint(unittest.TestCase):
 
         data = response.get_data(as_text=True)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(data, '["deepset/roberta-base-squad2"]')
+        self.assertEqual(data, '{"sentenceTransformer": ["deepset/roberta-base-squad2"], "questionAndAnswer": ['
+                               '"deepset/roberta-base-squad2"]}')
 
     @mock.patch('huggingface_test.input')
     def test_predict(self, mock_input):
@@ -53,57 +61,79 @@ class TestEndpoint(unittest.TestCase):
             "question": "How many games are required to win the FA Cup?",
             "chunks": [
                 {
-                    "text": "The FA Cup is open to any eligible club down to Level 10 of the English football league system – 20 professional clubs in the Premier League (level 1),72 professional clubs in the English Football League (levels 2 to 4), and several hundred non-League teams in steps 1 to 6 of the National League System (levels 5 to 10). A record 763 clubs competed in 2011–12. The tournament consists of 12 randomly drawn rounds followed by the semi-finals and the final. Entrants are not seeded, although a system of byes based on league level ensures higher ranked teams enter in later rounds.  The minimum number of games needed to win, depending on which round a team enters the competition, ranges from six to fourteen.",
+                    "text": "The FA Cup is open to any eligible club down to Level 10 of the English football league "
+                            "system – 20 professional clubs in the Premier League (level 1),72 professional clubs in "
+                            "the English Football League (levels 2 to 4), and several hundred non-League teams in "
+                            "steps 1 to 6 of the National League System (levels 5 to 10). A record 763 clubs competed "
+                            "in 2011–12. The tournament consists of 12 randomly drawn rounds followed by the "
+                            "semi-finals and the final. Entrants are not seeded, although a system of byes based on "
+                            "league level ensures higher ranked teams enter in later rounds.  The minimum number of "
+                            "games needed to win, depending on which round a team enters the competition, ranges from "
+                            "six to fourteen.",
                     "id": "1"
                 },
                 {
-                    "text": "The first six rounds are the Qualifying Competition, from which 32 teams progress to the first round of the Competition Proper, meeting the first of the 48 professional teams from Leagues One and Two. The last entrants are the Premier League and Championship clubs, into the draw for the Third Round Proper.[2] In the modern era, only one non-League team has ever reached the quarter-finals, and teams below Level 2 have never reached the final.[note 1] As a result, significant focus is given to the smaller teams who progress furthest, especially if they achieve an unlikely \"giant-killing\" victory.",
+                    "text": "The first six rounds are the Qualifying Competition, from which 32 teams progress to the "
+                            "first round of the Competition Proper, meeting the first of the 48 professional teams "
+                            "from Leagues One and Two. The last entrants are the Premier League and Championship "
+                            "clubs, into the draw for the Third Round Proper.[2] In the modern era, "
+                            "only one non-League team has ever reached the quarter-finals, and teams below Level 2 "
+                            "have never reached the final.[note 1] As a result, significant focus is given to the "
+                            "smaller teams who progress furthest, especially if they achieve an unlikely "
+                            "\"giant-killing\" victory.",
                     "id": "2"
                 }
             ]
         }
 
-        answer = '[{"score": 0.6043325066566467, "start": 693, "end": 708, "answer": "six to fourteen", ' \
-                 '"id": "1", "highlight": "The FA Cup is open to any eligible club down to Level 10 of ' \
-                 'the English football league system \\u2013 20 professional clubs in the Premier League ' \
-                 '(level 1),72 professional clubs in the English Football League (levels 2 to 4), ' \
-                 'and several hundred non-League teams in steps 1 to 6 of the National League System (' \
-                 'levels 5 to 10). A record 763 clubs competed in 2011\\u201312. The tournament consists ' \
-                 'of 12 randomly drawn rounds followed by the semi-finals and the final. Entrants are ' \
-                 'not seeded, although a system of byes based on league level ensures higher ranked ' \
-                 'teams enter in later rounds.  The minimum number of games needed to win, depending on ' \
-                 'which round a team enters the competition, ranges from <span class=\\\"highlight\\\">six ' \
-                 'to fourteen</span>."}, {"score": 0.0016566978301852942, "start": 64, "end": 66, ' \
-                 '"answer": "32", "id": "2", "highlight": "The first six rounds are the Qualifying ' \
-                 'Competition, from which <span class=\\\"highlight\\\">32</span> teams progress to the ' \
-                 'first round of the Competition Proper, meeting the first of the 48 professional teams ' \
-                 'from Leagues One and Two. The last entrants are the Premier League and Championship ' \
-                 'clubs, into the draw for the Third Round Proper.[2] In the modern era, ' \
-                 'only one non-League team has ever reached the quarter-finals, and teams below Level 2 ' \
-                 'have never reached the final.[note 1] As a result, significant focus is given to the ' \
-                 'smaller teams who progress furthest, especially if they achieve an unlikely ' \
-                 '\\\"giant-killing\\\" victory."}]'
+        answer = "[{'start': 693, 'end': 708, 'answer': 'six to fourteen', 'id': '1', 'highlight': 'The FA Cup is " \
+                 "open to any eligible club down to Level 10 of the English football league system – 20 professional " \
+                 "clubs in the Premier League (level 1),72 professional clubs in the English Football League (levels " \
+                 "2 to 4), and several hundred non-League teams in steps 1 to 6 of the National League System (levels " \
+                 "5 to 10). A record 763 clubs competed in 2011–12. The tournament consists of 12 randomly drawn " \
+                 "rounds followed by the semi-finals and the final. Entrants are not seeded, although a system of " \
+                 "byes based on league level ensures higher ranked teams enter in later rounds.  The minimum number " \
+                 "of games needed to win, depending on which round a team enters the competition, ranges from <span " \
+                 "class=\"highlight\">six to fourteen</span>.'}, {'start': 64, 'end': 66, 'answer': '32', 'id': '2', " \
+                 "'highlight': 'The first six rounds are the Qualifying Competition, from which <span " \
+                 "class=\"highlight\">32</span> teams progress to the first round of the Competition Proper, " \
+                 "meeting the first of the 48 professional teams from Leagues One and Two. The last entrants are the " \
+                 "Premier League and Championship clubs, into the draw for the Third Round Proper.[2] In the modern " \
+                 "era, only one non-League team has ever reached the quarter-finals, and teams below Level 2 have " \
+                 "never reached the final.[note 1] As a result, significant focus is given to the smaller teams who " \
+                 "progress furthest, especially if they achieve an unlikely \"giant-killing\" victory.'}]"
 
-        response = tester.post(
-            PREDICT_ENDPOINT,
-            content_type=CONTENTTYPE,
-            json=body
-        )
+        response1, status_code1 = get_post_response(tester, PREDICT_ENDPOINT, body, CONTENTTYPE, convert_json=True)
+        answer_response = remove_scores_from_response(response1)
 
-        data = response.get_data(as_text=True)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(data, answer)
+        self.assertEqual(status_code1, 200)
+        self.assertEqual(str(answer_response), answer)
 
     def test_predict_error_message(self):
         body_no_question = {
             "model": TINY_DISTILBERT_MODEL,
             "chunks": [
                 {
-                    "text": "The FA Cup is open to any eligible club down to Level 10 of the English football league system – 20 professional clubs in the Premier League (level 1),72 professional clubs in the English Football League (levels 2 to 4), and several hundred non-League teams in steps 1 to 6 of the National League System (levels 5 to 10). A record 763 clubs competed in 2011–12. The tournament consists of 12 randomly drawn rounds followed by the semi-finals and the final. Entrants are not seeded, although a system of byes based on league level ensures higher ranked teams enter in later rounds.  The minimum number of games needed to win, depending on which round a team enters the competition, ranges from six to fourteen.",
+                    "text": "The FA Cup is open to any eligible club down to Level 10 of the English football league "
+                            "system – 20 professional clubs in the Premier League (level 1),72 professional clubs in "
+                            "the English Football League (levels 2 to 4), and several hundred non-League teams in "
+                            "steps 1 to 6 of the National League System (levels 5 to 10). A record 763 clubs competed "
+                            "in 2011–12. The tournament consists of 12 randomly drawn rounds followed by the "
+                            "semi-finals and the final. Entrants are not seeded, although a system of byes based on "
+                            "league level ensures higher ranked teams enter in later rounds.  The minimum number of "
+                            "games needed to win, depending on which round a team enters the competition, ranges from "
+                            "six to fourteen.",
                     "id": "1"
                 },
                 {
-                    "text": "The first six rounds are the Qualifying Competition, from which 32 teams progress to the first round of the Competition Proper, meeting the first of the 48 professional teams from Leagues One and Two. The last entrants are the Premier League and Championship clubs, into the draw for the Third Round Proper.[2] In the modern era, only one non-League team has ever reached the quarter-finals, and teams below Level 2 have never reached the final.[note 1] As a result, significant focus is given to the smaller teams who progress furthest, especially if they achieve an unlikely \"giant-killing\" victory.",
+                    "text": "The first six rounds are the Qualifying Competition, from which 32 teams progress to the "
+                            "first round of the Competition Proper, meeting the first of the 48 professional teams "
+                            "from Leagues One and Two. The last entrants are the Premier League and Championship "
+                            "clubs, into the draw for the Third Round Proper.[2] In the modern era, "
+                            "only one non-League team has ever reached the quarter-finals, and teams below Level 2 "
+                            "have never reached the final.[note 1] As a result, significant focus is given to the "
+                            "smaller teams who progress furthest, especially if they achieve an unlikely "
+                            "\"giant-killing\" victory.",
                     "id": "2"
                 }
             ]
@@ -114,33 +144,19 @@ class TestEndpoint(unittest.TestCase):
             "question": "How many games are required to win the FA Cup?"
         }
 
-        response = tester.post(
-            PREDICT_ENDPOINT,
-            content_type=CONTENTTYPE,
-            json=None
-        )
+        _, status_code1 = get_post_response(tester, PREDICT_ENDPOINT, None, CONTENTTYPE)
+        response2, status_code2 = get_post_response(tester, PREDICT_ENDPOINT, body_no_question, CONTENTTYPE,
+                                                    convert_json=True)
+        response3, status_code3 = get_post_response(tester, PREDICT_ENDPOINT, body_no_chunks, CONTENTTYPE,
+                                                    convert_json=True)
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(status_code1, 400)
 
-        response = tester.post(
-            PREDICT_ENDPOINT,
-            content_type=CONTENTTYPE,
-            json=body_no_question
-        )
+        self.assertEqual(response2["message"], 'The prediction needs a question')
+        self.assertEqual(status_code2, 400)
 
-        data = json.loads(response.get_data(as_text=True))
-        self.assertEqual(data["message"], 'The prediction needs a question')
-        self.assertEqual(response.status_code, 400)
-
-        response = tester.post(
-            PREDICT_ENDPOINT,
-            content_type=CONTENTTYPE,
-            json=body_no_chunks
-        )
-
-        data = json.loads(response.get_data(as_text=True))
-        self.assertEqual(data["message"], 'The prediction needs at least one chunk')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response3["message"], 'The prediction needs at least one chunk')
+        self.assertEqual(status_code3, 400)
 
     def test_status_with_no_train(self):
         response = tester.get(
@@ -155,24 +171,19 @@ class TestEndpoint(unittest.TestCase):
     def test_train(self):
         body = {
             "output_path": MODEL_ROOT_TRAINED,
-            "model": "bert-base-uncased",
+            "model": BERT_UNCASED_MODEL,
             "data": DATA_TEST,
             "batch_training": 2
         }
 
-        response = tester.post(
-            TRAIN_ENDPOINT,
-            content_type=CONTENTTYPE,
-            json=body
-        )
+        response1, status_code1 = get_post_response(tester, TRAIN_ENDPOINT, body, CONTENTTYPE, convert_json=True)
 
-        data = json.loads(response.get_data(as_text=True))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(data["message"], "Training started")
+        self.assertEqual(status_code1, 200)
+        self.assertEqual(response1["message"], "Training started")
 
     def test_train_error_message(self):
         body_no_output_path = {
-            "model": "bert-base-uncased",
+            "model": BERT_UNCASED_MODEL,
             "data": DATA_TEST,
             "batch_training": 2
         }
@@ -185,64 +196,121 @@ class TestEndpoint(unittest.TestCase):
 
         body_no_data = {
             "output_path": MODEL_ROOT_TRAINED,
-            "model": "bert-base-uncased",
+            "model": BERT_UNCASED_MODEL,
             "batch_training": 2
         }
 
         body_data_empty = {
             "output_path": MODEL_ROOT_TRAINED,
-            "model": "bert-base-uncased",
+            "model": BERT_UNCASED_MODEL,
             "data": None,
             "batch_training": 2
         }
 
-        response = tester.post(
-            TRAIN_ENDPOINT,
-            content_type=CONTENTTYPE,
-            json=None
-        )
+        _, status_code1 = get_post_response(tester, TRAIN_ENDPOINT, None, CONTENTTYPE)
+        response2, status_code2 = get_post_response(tester, TRAIN_ENDPOINT, body_no_output_path, CONTENTTYPE,
+                                                    convert_json=True)
+        response3, status_code3 = get_post_response(tester, TRAIN_ENDPOINT, body_no_model, CONTENTTYPE,
+                                                    convert_json=True)
+        response4, status_code4 = get_post_response(tester, TRAIN_ENDPOINT, body_no_data, CONTENTTYPE,
+                                                    convert_json=True)
+        response5, status_code5 = get_post_response(tester, TRAIN_ENDPOINT, body_data_empty, CONTENTTYPE,
+                                                    convert_json=True)
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(status_code1, 400)
 
-        response = tester.post(
-            TRAIN_ENDPOINT,
-            content_type=CONTENTTYPE,
-            json=body_no_output_path
-        )
+        self.assertEqual(response2["message"], 'Missing parameter output_path')
+        self.assertEqual(status_code2, 400)
 
-        data = json.loads(response.get_data(as_text=True))
-        self.assertEqual(data["message"], 'Missing parameter output_path')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response3["message"], 'Missing parameter model')
+        self.assertEqual(status_code3, 400)
 
-        response = tester.post(
-            TRAIN_ENDPOINT,
-            content_type=CONTENTTYPE,
-            json=body_no_model
-        )
+        self.assertEqual(response4["message"], 'Missing parameter data')
+        self.assertEqual(status_code4, 400)
 
-        data = json.loads(response.get_data(as_text=True))
-        self.assertEqual(data["message"], 'Missing parameter model')
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response5["message"], 'Missing information in parameter data')
+        self.assertEqual(status_code5, 400)
 
-        response = tester.post(
-            TRAIN_ENDPOINT,
-            content_type=CONTENTTYPE,
-            json=body_no_data
-        )
+    @mock.patch('huggingface_test.input')
+    def test_download_models(self, mock_input):
+        body1 = {
+            "questionAndAnswer": [TINY_DISTILBERT_MODEL]
+        }
 
-        data = json.loads(response.get_data(as_text=True))
-        self.assertEqual(data["message"], 'Missing parameter data')
-        self.assertEqual(response.status_code, 400)
+        answer1 = '{"questionAndAnswer": [{"model": "sshleifer/tiny-distilbert-base-cased-distilled-squad", ' \
+                  '"path": "./models_test/questionAndAnswer/sshleifer/tiny-distilbert-base-cased-distilled-squad/", ' \
+                  '"status": "Model downloaded"}]}'
 
-        response = tester.post(
-            TRAIN_ENDPOINT,
-            content_type=CONTENTTYPE,
-            json=body_data_empty
-        )
+        body2 = {
+            "questionAndAnswer": [
+                TINY_DISTILBERT_MODEL,
+                BERT_UNCASED_MODEL
+            ]
+        }
 
-        data = json.loads(response.get_data(as_text=True))
-        self.assertEqual(data["message"], 'Missing information in parameter data')
-        self.assertEqual(response.status_code, 400)
+        answer2 = '{"questionAndAnswer": [{"model": "sshleifer/tiny-distilbert-base-cased-distilled-squad", ' \
+                  '"path": "./models_test/questionAndAnswer/sshleifer/tiny-distilbert-base-cased-distilled-squad/", ' \
+                  '"status": "Model exists"}, {"model": "bert-base-uncased", "path": ' \
+                  '"./models_test/questionAndAnswer/bert-base-uncased/", "status": "Model downloaded"}]}'
+
+        body3 = {
+            "questionAndAnswer": [
+                TINY_DISTILBERT_MODEL,
+                "noneexistant_model",
+                BERT_UNCASED_MODEL
+            ]
+        }
+
+        answer3 = "{'message': {'questionAndAnswer': [{'model': " \
+                  "'sshleifer/tiny-distilbert-base-cased-distilled-squad', 'path': " \
+                  "'./models_test/questionAndAnswer/sshleifer/tiny-distilbert-base-cased-distilled-squad/', 'status': " \
+                  "'Model " \
+                  "exists'}, {'model': 'noneexistant_model', 'status': \"We couldn't connect to " \
+                  "'https://huggingface.co/' to load this model and it looks like noneexistant_model is not the path " \
+                  "to a directory conaining a config.json file.\\nCheckout your internet connection or see how to run " \
+                  "the library in offline mode at " \
+                  "'https://huggingface.co/docs/transformers/installation#offline-mode'.\"}, {'model': " \
+                  "'bert-base-uncased', 'path': './models_test/questionAndAnswer/bert-base-uncased/', 'status': " \
+                  "'Model exists'}]}, " \
+                  "'status': 400}"
+
+        response1, status_code1 = get_post_response(tester, DOWNLOAD_MODEL_ENDPOINT, body1, CONTENTTYPE)
+        response2, status_code2 = get_post_response(tester, DOWNLOAD_MODEL_ENDPOINT, body2, CONTENTTYPE)
+        response3, status_code3 = get_post_response(tester, DOWNLOAD_MODEL_ENDPOINT, body3, CONTENTTYPE,
+                                                    convert_json=True)
+        del response3["timestamp"]
+
+        self.assertEqual(status_code1, 200)
+        self.assertEqual(response1, answer1)
+
+        self.assertEqual(status_code2, 200)
+        self.assertEqual(response2, answer2)
+
+        self.assertEqual(status_code3, 400)
+        self.assertEqual(str(response3), answer3)
+
+        shutil.rmtree('./models_test/questionAndAnswer/sshleifer')
+        shutil.rmtree('./models_test/questionAndAnswer/bert-base-uncased')
+
+    @mock.patch('huggingface_test.input')
+    def test_encode(self, mock_input):
+        body = {
+            "model": TINY_DISTILBERT_MODEL,
+            "id": "123",
+            "texts": [DATA_TEST_SINGLE_TEXT]
+        }
+
+        answer = "{'id': '123', 'result': [[0.007092174142599106, -0.007092198356986046]]}"
+
+        response1, status_code1 = get_post_response(tester, ENCODE_ENDPOINT, body, CONTENTTYPE, convert_json=True)
+
+        self.assertEqual(status_code1, 200)
+        self.assertEqual(str(response1), answer)
+
+    def test_encode_error_message(self):
+        _, status_code1 = get_post_response(tester, ENCODE_ENDPOINT, None, CONTENTTYPE)
+
+        self.assertEqual(status_code1, 400)
 
     @classmethod
     def tearDownClass(cls):
@@ -259,7 +327,7 @@ class TestEndpointFunctions(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        model.download_models(MODELS, MODEL_ROOT)
+        download_models(PATHS_TO_DOWNLOAD, MODELS_QA)
 
     def setUp(self):
         huggingface.nlp = spacy.load("en_core_web_sm",
@@ -292,7 +360,7 @@ class TestEndpointFunctions(unittest.TestCase):
         self.assertEqual(result, response)
 
     def test_start_train(self):
-        model_name = "bert-base-uncased"
+        model_name = BERT_UNCASED_MODEL
         output_path = MODEL_ROOT_TRAINED
         batch_size = 2
 
@@ -310,7 +378,7 @@ class TestEndpointFunctions(unittest.TestCase):
         shutil.rmtree(MODEL_ROOT_TRAINED)
 
     def test_train_mlm(self):
-        model_name = "bert-base-uncased"
+        model_name = BERT_UNCASED_MODEL
         output_path = MODEL_ROOT_TRAINED
 
         tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
@@ -335,7 +403,7 @@ class TestEndpointFunctions(unittest.TestCase):
                   ('Includes', 6), ('Indian', 7), ('Middle', 8), ('Scandinavian', 9), ('chardonnay', 13),
                   ('fermentation', 19), ('sugars', 28)]
 
-        model_name = "bert-base-uncased"
+        model_name = BERT_UNCASED_MODEL
 
         tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
         different_tokens_list = huggingface.get_new_tokens(DATA_TEST, tokenizer)

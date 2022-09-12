@@ -15,7 +15,6 @@ First and foremost, you need to download models locally. For this, `init_models.
 
 ```python
 models = [{"model": 'deepset/roberta-base-squad2'},
-          {"model": 'oliverproud/distilbert-finetuned-model'},
           {"model": 'mrm8488/distilbert-multi-finetuned-for-xqua-on-tydiqa'},
           {"model": 'distilbert-base-cased-distilled-squad'}]
 path = "./models"
@@ -105,10 +104,9 @@ Payload: None
 Sample Result:
 ```json
 [
-    "deepset/roberta-base-squad2",
-    "distilbert-base-cased-distilled-squad",
-    "mrm8488/distilbert-multi-finetuned-for-xqua-on-tydiqa",
-    "models\\oliverproud\\distilbert-finetuned-model"
+    "{path}/deepset/roberta-base-squad2",
+    "{path}/distilbert-base-cased-distilled-squad",
+    "{path}/mrm8488/distilbert-multi-finetuned-for-xqua-on-tydiqa"
 ]
 ```
 
@@ -172,5 +170,96 @@ Sample Result:
 ```json
 {
   "training_status": true
+}
+```
+
+## Download Models
+
+Given valid and public model names, download and store them on disk.
+
+Verb: `POST`
+
+Endpoint: `http://localhost:8080/download-model`
+
+Payload: 
+```json
+{
+    "sentenceTransformer": [
+        "bert-base-uncased"
+    ],
+    "questionAndAnswer": [
+        "sshleifer/tiny-distilbert-base-cased-distilled-squad",
+        "noneexistant_model",
+        "bert-base-uncased"
+    ]
+}
+```
+
+## Parameters:
+
+`sentenceTransformer` - Optional, list.
+
+Models to search and download on disk for the specified transformer.
+
+`questionAndAnswer` - Optional, list.
+
+Models to search and download on disk for the specified transformer.
+
+Sample Response:
+
+Example 1
+```json
+{
+    "message": {
+        "questionAndAnswer": [
+            {
+                "model": "sshleifer/tiny-distilbert-base-cased-distilled-squad",
+                "path": "../models/qa/sshleifer/tiny-distilbert-base-cased-distilled-squad/",
+                "status": "Model downloaded"
+            },
+            {
+                "model": "no_valid_model",
+                "status": "We couldn't connect to 'https://huggingface.co/' to load this model and it looks like no_valid_model is not the path to a directory conaining a config.json file.\nCheckout your internet connection or see how to run the library in offline mode at 'https://huggingface.co/docs/transformers/installation#offline-mode'."
+            },
+            {
+                "model": "bert-base-uncased",
+                "path": "../models/qa/sshleifer/tiny-distilbert-base-cased-distilled-squad//bert-base-uncased/",
+                "status": "Model downloaded"
+            }
+        ],
+      "sentenceTransformer": [
+          {
+                "model": "bert-base-uncased",
+                "path": "../models/st/sshleifer/tiny-distilbert-base-cased-distilled-squad//bert-base-uncased/",
+                "status": "Model downloaded"
+            }
+        ]
+    },
+    "status": 400
+}
+```
+
+Example 2
+```json
+{
+  "questionAndAnswer": [
+      {
+        "model": "sshleifer/tiny-distilbert-base-cased-distilled-squad",
+        "path": "../models/qa/sshleifer/tiny-distilbert-base-cased-distilled-squad/",
+        "status": "Model downloaded"
+      },
+      {
+        "model": "bert-base-uncased",
+        "path": "../models/qa/sshleifer/tiny-distilbert-base-cased-distilled-squad//bert-base-uncased/",
+        "status": "Model downloaded"
+      }
+    ],
+  "sentenceTransformer": [
+    {
+        "model": "bert-base-uncased",
+        "path": "../models/st/sshleifer/tiny-distilbert-base-cased-distilled-squad//bert-base-uncased/",
+        "status": "Model downloaded"
+    }
+  ]
 }
 ```
