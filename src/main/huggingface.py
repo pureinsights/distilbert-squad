@@ -1,5 +1,6 @@
 import datetime
 import json
+import os
 from threading import Thread
 
 import numpy as np
@@ -69,6 +70,8 @@ def train_vocab():
         return error_message('Missing parameter model', 400)
     if 'output_path' not in body:
         return error_message('Missing parameter output_path', 400)
+    if not os.path.isabs(body['output_path']):
+        return error_message('Invalid directory for output_path', 400)
     if 'data' not in body:
         return error_message('Missing parameter data', 400)
     if body['data'] is None:

@@ -188,6 +188,12 @@ class TestEndpoint(unittest.TestCase):
             "batch_training": 2
         }
 
+        body_invalid_output_path = {
+            "output_path": "non_path_parameter",
+            "model": BERT_UNCASED_MODEL,
+            "batch_training": 2
+        }
+
         body_no_model = {
             "output_path": MODEL_ROOT_TRAINED,
             "data": DATA_TEST,
@@ -206,15 +212,16 @@ class TestEndpoint(unittest.TestCase):
             "data": None,
             "batch_training": 2
         }
-
         _, status_code1 = get_post_response(tester, TRAIN_ENDPOINT, None, CONTENTTYPE)
         response2, status_code2 = get_post_response(tester, TRAIN_ENDPOINT, body_no_output_path, CONTENTTYPE,
                                                     convert_json=True)
-        response3, status_code3 = get_post_response(tester, TRAIN_ENDPOINT, body_no_model, CONTENTTYPE,
+        response3, status_code3 = get_post_response(tester, TRAIN_ENDPOINT, body_invalid_output_path, CONTENTTYPE,
                                                     convert_json=True)
-        response4, status_code4 = get_post_response(tester, TRAIN_ENDPOINT, body_no_data, CONTENTTYPE,
+        response4, status_code4 = get_post_response(tester, TRAIN_ENDPOINT, body_no_model, CONTENTTYPE,
                                                     convert_json=True)
-        response5, status_code5 = get_post_response(tester, TRAIN_ENDPOINT, body_data_empty, CONTENTTYPE,
+        response5, status_code5 = get_post_response(tester, TRAIN_ENDPOINT, body_no_data, CONTENTTYPE,
+                                                    convert_json=True)
+        response6, status_code6 = get_post_response(tester, TRAIN_ENDPOINT, body_data_empty, CONTENTTYPE,
                                                     convert_json=True)
 
         self.assertEqual(status_code1, 400)
@@ -222,14 +229,17 @@ class TestEndpoint(unittest.TestCase):
         self.assertEqual(response2["message"], 'Missing parameter output_path')
         self.assertEqual(status_code2, 400)
 
-        self.assertEqual(response3["message"], 'Missing parameter model')
+        self.assertEqual(response3["message"], 'Invalid directory for output_path')
         self.assertEqual(status_code3, 400)
 
-        self.assertEqual(response4["message"], 'Missing parameter data')
+        self.assertEqual(response4["message"], 'Missing parameter model')
         self.assertEqual(status_code4, 400)
 
-        self.assertEqual(response5["message"], 'Missing information in parameter data')
+        self.assertEqual(response5["message"], 'Missing parameter data')
         self.assertEqual(status_code5, 400)
+
+        self.assertEqual(response6["message"], 'Missing information in parameter data')
+        self.assertEqual(status_code6, 400)
 
     @mock.patch('huggingface_test.input')
     def test_download_models(self, mock_input):
@@ -364,7 +374,7 @@ class TestEndpointFunctions(unittest.TestCase):
         output_path = MODEL_ROOT_TRAINED
         batch_size = 2
 
-        answer = {"message": "MLM Training finished, model saved at: './models_test/trained/'",
+        answer = {"message": "MLM Training finished, model saved at: '/models_test/trained/'",
                   "added_tokens": ["Alcoholic", "Approximately", "Australia", "Eastern", "Ground", "Includes", "Indian",
                                    "Middle", "Scandinavian", "chardonnay", "fermentation", "sugars"]}
 
