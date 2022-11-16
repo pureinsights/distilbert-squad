@@ -68,7 +68,7 @@ class TestModel(unittest.TestCase):
         shutil.rmtree(MODEL_ROOT)
 
     def test_model_encode(self):
-        threshold = 0.1
+        threshold = 0.001
         download_models(PATHS_TO_DOWNLOAD, MODELS_ST)
         answer = "{\"id\": \"123\", \"result\": [[0.27860432863235474, -0.08736845850944519, -0.3176932632923126, " \
                  "0.4337075352668762, 0.2323848009109497, 0.22227589786052704, 0.6343961954116821, " \
