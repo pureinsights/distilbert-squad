@@ -1,5 +1,8 @@
+import json
 import shutil
 import unittest
+
+import numpy as np
 from transformers import pipelines
 from sentence_transformers import SentenceTransformer
 
@@ -65,8 +68,9 @@ class TestModel(unittest.TestCase):
         shutil.rmtree(MODEL_ROOT)
 
     def test_model_encode(self):
+        threshold = 0.001
         download_models(PATHS_TO_DOWNLOAD, MODELS_ST)
-        answer = "{'id': '123', 'result': [[0.27860432863235474, -0.08736845850944519, -0.3176932632923126, " \
+        answer = "{\"id\": \"123\", \"result\": [[0.27860432863235474, -0.08736845850944519, -0.3176932632923126, " \
                  "0.4337075352668762, 0.2323848009109497, 0.22227589786052704, 0.6343961954116821, " \
                  "0.1504390835762024, 0.9565765261650085, -0.472080796957016, 0.24544845521450043, " \
                  "0.6529350280761719, 0.04708219692111015, -0.5364431142807007, 0.23559606075286865, " \
@@ -450,7 +454,10 @@ class TestModel(unittest.TestCase):
 
         model_class = ModelSentenceTransformer(MODEL_ROOT)
         response_answer = model_class.encode("123", DATA_TEST_SINGLE_TEXT, 'deepset/roberta-base-squad2')
-        self.assertEqual(str(response_answer), answer)
+        answer = json.loads(answer)
+        result = np.abs(np.subtract(answer['result'], response_answer['result']))
+        average = sum(sum(result)) / (result.shape[0] * result.shape[1])
+        self.assertTrue(threshold > average)
         shutil.rmtree(MODEL_ROOT)
 
     def test_get_models_stored(self):

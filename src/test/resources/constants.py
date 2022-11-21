@@ -6,7 +6,7 @@ MODEL_ROOT_ST = "./models_test/sentenceTransformer"
 
 CONTENTTYPE = 'application/json'
 
-MODEL_ROOT_TRAINED = "./models_test/trained/"
+MODEL_ROOT_TRAINED = "/models_test/trained/"
 DATA_TEST = ["Ground spice commonly used in Indian cooking and drinks, in Middle Eastern cooking and in Scandinavian "
              "baking",
              "Alcoholic beverage produced by fermentation of grape juice produced from the chardonnay grape, "
