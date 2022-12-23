@@ -155,6 +155,7 @@ class ModelSentenceTransformer(Model):
                 model_name = json_object[name_path_key] if name_path_key in json_object else str(
                     config_file_path.parent).replace(self.path, '')
 
+            
             sentence_transformer_model = SentenceTransformer(model_path, device=self.device)
 
             pipelines[model_name] = sentence_transformer_model
@@ -169,9 +170,11 @@ class ModelSentenceTransformer(Model):
         @param model_name: Model name to use.
         @return: An embedding and the id of the document.
         """
-
-        model = SentenceTransformer(model_name)
-        texts_encoded = model.encode(texts)
+        
+        model = self.get_pipeline(model_name)
+        if not model:
+            model = SentenceTransformer(model_name, device=self.device)
+        texts_encoded = model.encode(texts,batch_size=64, device=self.device)
 
         return {"id": document_id, "result": texts_encoded.tolist()}
 
