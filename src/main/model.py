@@ -155,11 +155,13 @@ class ModelSentenceTransformer(Model):
                 model_name = json_object[name_path_key] if name_path_key in json_object else str(
                     config_file_path.parent).replace(self.path, '')
 
-            
-            sentence_transformer_model = SentenceTransformer(model_path, device=self.device)
+            try:
+                sentence_transformer_model = SentenceTransformer(model_path, device=self.device)
+                pipelines[model_name] = sentence_transformer_model
+                print(f"Model loaded: {model_name}")
+            except:
+                print(f"Could load mode: {model_name}. Skipping it.")
 
-            pipelines[model_name] = sentence_transformer_model
-            print(f"Model loaded: $model_name")
         return pipelines
 
     def encode(self, document_id, texts, model_name):
