@@ -157,14 +157,14 @@ class ModelSentenceTransformer(Model):
                 model_name = json_object[name_path_key] if name_path_key in json_object else str(
                     config_file_path.parent).replace(self.path, '')
 
-            
-            sentence_transformer_model = SentenceTransformer(model_path, device=self.device)
-
-            pipelines[model_name] = sentence_transformer_model
-            # Sets the first model found as the default one.
-            if default_pipeline is None:
-                default_pipeline = sentence_transformer_model
-            print(f"Model loaded: $model_name")
+                try:
+                    sentence_transformer_model = SentenceTransformer(model_path, device=self.device)
+                    pipelines[model_name] = sentence_transformer_model
+                    if default_pipeline is None:
+                        default_pipeline = sentence_transformer_model
+                    print(f"Model loaded: {model_name}")
+                except:
+                    print(f"Could load mode: {model_name}. Skipping it.")
             
         return pipelines, default_pipeline
 
