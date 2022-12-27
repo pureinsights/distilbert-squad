@@ -173,9 +173,6 @@ def encode():
     if 'id' not in body:
         return error_message('The encode needs an id', 400)
 
-    if 'model' not in body:
-        return error_message('The encode needs the model to be specified', 400)
-
     if 'texts' not in body:
         return error_message('At least a text must be added to encode', 400)
 

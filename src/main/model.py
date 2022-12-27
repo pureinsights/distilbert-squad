@@ -116,7 +116,7 @@ class ModelSentenceTransformer(Model):
         self.field_name = "sentenceTransformer"
         super().__init__(path)
         self.device = "cpu" if self.device == -1 else "cuda"
-        self.pipelines = self.load_models()
+        self.pipelines, self.default_pipeline = self.load_models()
 
     def get_pipeline(self, model_name):
         """
@@ -126,12 +126,13 @@ class ModelSentenceTransformer(Model):
         @param model_name: Name of the model.
         @return: Pipeline associated to the model name.
         """
-        if model_name is not None and model_name in self.pipelines.keys():
+        if model_name is None or model_name not in self.pipelines.keys():
+            return self.default_pipeline
+        else:
             return self.pipelines[model_name]
-        return None
 
     def reload_models(self):
-        self.pipelines = self.load_models()
+        self.pipelines, self.default_pipeline = self.load_models()
 
     def load_models(self):
         """
@@ -144,6 +145,7 @@ class ModelSentenceTransformer(Model):
 
         print("Loading Sentence Transformer models...")
         pipelines = {}
+        default_pipeline = None
         config_file = 'config.json'
         for config_file_path in Path(self.path).rglob(config_file):
             model_path = str(config_file_path.parent)
@@ -159,8 +161,12 @@ class ModelSentenceTransformer(Model):
             sentence_transformer_model = SentenceTransformer(model_path, device=self.device)
 
             pipelines[model_name] = sentence_transformer_model
+            # Sets the first model found as the default one.
+            if default_pipeline is None:
+                default_pipeline = sentence_transformer_model
             print(f"Model loaded: $model_name")
-        return pipelines
+            
+        return pipelines, default_pipeline
 
     def encode(self, document_id, texts, model_name):
         """
@@ -172,6 +178,7 @@ class ModelSentenceTransformer(Model):
         """
         
         model = self.get_pipeline(model_name)
+            
         if not model:
             model = SentenceTransformer(model_name, device=self.device)
         texts_encoded = model.encode(texts,batch_size=64, device=self.device)
