@@ -164,7 +164,7 @@ class ModelSentenceTransformer(Model):
                         default_pipeline = sentence_transformer_model
                     print(f"Model loaded: {model_name}")
                 except:
-                    print(f"Could load mode: {model_name}. Skipping it.")
+                    print(f"Couldn't load model: {model_name}. Skipping it.")
             
         return pipelines, default_pipeline
 

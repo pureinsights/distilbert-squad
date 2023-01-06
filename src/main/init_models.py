@@ -8,7 +8,7 @@ models = {
 }
 
 paths = {
-    "default": "C:\dev\git\models"
+    "default": "../models"
 }
 
 
