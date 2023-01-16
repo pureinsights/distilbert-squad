@@ -140,6 +140,37 @@ Sample Response:
 ]
 ```
 
+## Encode
+Verb: `POST`
+
+Endpoint: `http://localhost:8080/encode`
+
+Payload: 
+```json
+{
+    "id": 123,
+    "texts": ["hello world"],
+    "model": "bert-base-uncased", #optional
+    "is_tokenized": false
+}
+```
+
+Sample Response:
+```json
+{
+    "id": 123,
+    "result": [
+        [
+            -0.5333667397499084,
+            -0.1457321047782898,
+			....
+        ]
+    ],
+    "status": 200
+}
+```
+
+
 ## Models
 Verb: `GET`
 

@@ -1,14 +1,17 @@
 """
 NOTE: This file is only meant to run locally to download models!
 """
-from src.main.download import download_models
+from download import download_models
 
 models = {
-    "questionAndAnswer": ['deepset/roberta-base-squad2',
-                          'mrm8488/distilbert-multi-finetuned-for-xqua-on-tydiqa',
-                          'distilbert-base-cased-distilled-squad']
+    "sentenceTransformer": ['sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2']
 }
 
-path = "../models"
+paths = {
+    "default": "../models"
+}
 
-download_models(models, path)
+
+
+
+download_models(paths,models)
