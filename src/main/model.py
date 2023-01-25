@@ -9,10 +9,23 @@ logger.setLevel(logging.DEBUG)
 from transformers import (AutoTokenizer, AutoModelForQuestionAnswering, pipeline)
 from sentence_transformers import SentenceTransformer
 
+# Define logging configuration
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-
 sh = logging.StreamHandler()
-sh.setLevel(logging.DEBUG)
+
+# Get log level from environment variable or put debug as default
+PATH_ENV_VARIABLE = "LOG"
+loglevel = environ[PATH_ENV_VARIABLE] if environ.get(PATH_ENV_VARIABLE) is not None else "DEBUG"
+
+# Check if log level exists , you can find more information here: https://docs.python.org/3/howto/logging.html
+numeric_level = getattr(logging, loglevel.upper(), None)
+
+# Put debug level as default if number does not exist in the logging level catalog
+if not isinstance(numeric_level, int):
+    print('Invalid log level')
+    numeric_level = 10 # Debug level number
+    
+sh.setLevel(numeric_level)
 sh.setFormatter(formatter)
 logger.addHandler(sh)
 
@@ -30,7 +43,7 @@ class Model:
         See https://huggingface.co/transformers/v3.0.2/main_classes/pipelines.html
         '''
         self.device = int(environ[CPU_GPU_DEVICE_VARIABLE]) if environ.get(CPU_GPU_DEVICE_VARIABLE) is not None else -1
-        logger.debug("_init_ Model class CPU:%s , model path: %s", self.device,self.path)
+        logger.debug("_init_ Model class CPU:%s , model path to load: %s", self.device,self.path)
 
     def get_models_stored(self, response):
         field_name = self.field_name
@@ -63,7 +76,7 @@ class ModelQuestionAnswer(Model):
             logger.debug("Get default model questionAndAnswer")
             return self.default_pipeline
         else:
-            logger.debug("Get default model:%s",model_name)
+            logger.debug("Get model:%s",model_name)
             return self.pipelines[model_name]
 
     def predict(self, contexts, question, model_name):
@@ -100,8 +113,8 @@ class ModelQuestionAnswer(Model):
         pipelines = {}
         default_pipeline = None
         config_file = 'config.json'
+        logger.debug("Trying to read configuration file from: %s", self.path)
         for config_file_path in Path(self.path).rglob(config_file):
-            logger.debug("Accesing config file")
             model_path = str(config_file_path.parent)
 
             name_path_key = '_name_or_path'
@@ -149,8 +162,10 @@ class ModelSentenceTransformer(Model):
 
         logger.debug("Get pipeline from sentence transformer")
         if model_name is None or model_name not in self.pipelines.keys():
+            logger.debug("Return model from default pipeline: %s", self.default_pipeline)
             return self.default_pipeline
         else:
+            logger.debug("Return model: %s", self.pipelines[model_name])
             return self.pipelines[model_name]
 
     def reload_models(self):
@@ -168,6 +183,7 @@ class ModelSentenceTransformer(Model):
         pipelines = {}
         default_pipeline = None
         config_file = 'config.json'
+        logger.debug("Trying to read configuration file from: %s", self.path)
         for config_file_path in Path(self.path).rglob(config_file):
             logger.debug("Accesing config file")
             model_path = str(config_file_path.parent)
@@ -200,8 +216,7 @@ class ModelSentenceTransformer(Model):
         @return: An embedding and the id of the document.
         """
         logger.debug("Execute encode method")
-        model = self.get_pipeline(model_name)
-            
+        model = self.get_pipeline(model_name)    
         if not model:
             model = SentenceTransformer(model_name, device=self.device)
             
