@@ -1,18 +1,15 @@
 import os
 import logging
+from transformers import AutoTokenizer, AutoModelForQuestionAnswering, AutoModel
 
+#Define logger
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
-
-
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-
 sh = logging.StreamHandler()
 sh.setLevel(logging.DEBUG)
 sh.setFormatter(formatter)
 logger.addHandler(sh)
-
-from transformers import AutoTokenizer, AutoModelForQuestionAnswering, AutoModel
 
 
 def download_model(path, model_name):
@@ -82,6 +79,7 @@ def download_models(paths, models):
     """
     models_downloaded = {}
     is_error_found = False
+    logger.debug("Download model method")
 
     for model_type, model_names in models.items():
         models_downloaded.update({model_type: []})
