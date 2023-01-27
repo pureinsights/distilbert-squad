@@ -73,10 +73,10 @@ class ModelQuestionAnswer(Model):
         @return: Pipeline associated to the model name.
         """
         if model_name is None or model_name not in self.pipelines.keys():
-            logger.debug("Get default model questionAndAnswer")
+            logger.debug("Get default model for questionAndAnswer")
             return self.default_pipeline
         else:
-            logger.debug("Get model:%s",model_name)
+            logger.debug("Get model for questionAndAnswer:%s",model_name)
             return self.pipelines[model_name]
 
     def predict(self, contexts, question, model_name):
@@ -113,10 +113,10 @@ class ModelQuestionAnswer(Model):
         pipelines = {}
         default_pipeline = None
         config_file = 'config.json'
-        logger.debug("Trying to read configuration file from: %s", self.path)
+        logger.debug("ModelQuestionAnswer trying to read configuration file from: %s", self.path)
         for config_file_path in Path(self.path).rglob(config_file):
             model_path = str(config_file_path.parent)
-
+            logger.debug("Accesing file for ModelQuestionAnswer")
             name_path_key = '_name_or_path'
             with open(config_file_path) as jsonFile:
                 json_object = json.load(jsonFile)
@@ -136,7 +136,7 @@ class ModelQuestionAnswer(Model):
             pipelines[model_name] = current_pipeline
             # Sets the first model found as the default one.
             if default_pipeline is None:
-                logger.debug("Set default model")
+                logger.debug("Set default model for ModelQuestionAnswer %s", model_name)
                 default_pipeline = current_pipeline
             logger.debug("Model loaded: %s", model_name)
         return pipelines, default_pipeline
@@ -162,10 +162,10 @@ class ModelSentenceTransformer(Model):
 
         logger.debug("Get pipeline from sentence transformer")
         if model_name is None or model_name not in self.pipelines.keys():
-            logger.debug("Return model from default pipeline: %s", self.default_pipeline)
+            logger.debug("Get default model for ModelSentenceTransformer")
             return self.default_pipeline
         else:
-            logger.debug("Return model: %s", self.pipelines[model_name])
+            logger.debug("Return model for ModelSentenceTransformer: %s", model_name)
             return self.pipelines[model_name]
 
     def reload_models(self):
@@ -183,9 +183,9 @@ class ModelSentenceTransformer(Model):
         pipelines = {}
         default_pipeline = None
         config_file = 'config.json'
-        logger.debug("Trying to read configuration file from: %s", self.path)
+        logger.debug("ModelSentenceTransformer trying to read configuration file from: %s", self.path)
         for config_file_path in Path(self.path).rglob(config_file):
-            logger.debug("Accesing config file")
+            logger.debug("Accesing config file for ModelSentenceTransformer")
             model_path = str(config_file_path.parent)
 
             name_path_key = '_name_or_path'
@@ -198,11 +198,11 @@ class ModelSentenceTransformer(Model):
                     sentence_transformer_model = SentenceTransformer(model_path, device=self.device)
                     pipelines[model_name] = sentence_transformer_model
                     if default_pipeline is None:
+                        logger.debug("Set default model for ModelSentenceTransformer %s", model_name)
                         default_pipeline = sentence_transformer_model
-                    print(f"Model loaded: {model_name}")
                     logger.debug("Model loaded: %s", model_name)
                 except:
-                    print(f"Couldn't load model: {model_name}. Skipping it.")
+                    logger.error("Couldn't load model: %s. Skipping it.",model_name)
             
         return pipelines, default_pipeline
 
