@@ -1,10 +1,24 @@
 # Use the official lightweight Python image.
 # https://hub.docker.com/_/python
-FROM python:3.7-slim
+FROM nvidia/cuda:11.8.0-base-ubuntu22.04
 
-ENV WORKERS=1
-ENV THREADS=8
-ENV TIMEOUT=900
+RUN : \
+    && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        software-properties-common \
+    && add-apt-repository -y ppa:deadsnakes \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        python3.8-venv \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && :
+
+RUN python3.8 -m venv /venv
+ENV PATH=/venv/bin:$PATH
+
+ENV WORKERS=2
+ENV THREADS=1
+ENV TIMEOUT=30000
 ENV MODELS_PATH='./src/models'
 
 # Copy local code to the container image.
