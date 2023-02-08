@@ -51,7 +51,7 @@ class ModelQuestionAnswer(Model):
         else:
             return self.pipelines[model_name]
 
-    def predict(self, contexts, question, model_name):
+    def predict(self, contexts, question, model_name, truncation, padding):
         """
         Locates the answer to a question across several context texts.
         @param contexts: Possible answers.
@@ -61,7 +61,7 @@ class ModelQuestionAnswer(Model):
         """
         questions = [question] * len(contexts)  # There must be a context text per asked question
         selected_pipeline = self.get_pipeline(model_name)
-        answers = selected_pipeline(question=questions, context=contexts)
+        answers = selected_pipeline(question=questions, context=contexts, truncation=truncation, padding=padding)
 
         # if a single element is returned, then convert it to list
         if not isinstance(answers, list):
