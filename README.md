@@ -100,6 +100,11 @@ Verb: `POST`
 
 Endpoint: `http://localhost:8080/predict`
 
+Optional parameters for the Paylod.
+* `"truncation"` : Truncates to the max lenght of the model. Defaults to `True`.
+* `"padding"` : Adds padding to comply with the min lenght of the model. Defaults to `True`.
+
+
 Payload: 
 ```json
 {
