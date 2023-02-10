@@ -117,9 +117,12 @@ def predict():
     style = body['style'] if 'style' in body else 'highlight'
     response = []
 
+    truncation = bool(body['truncation']) if 'truncation' in body else True
+    padding = bool(body['padding']) if 'padding' in body else True
+
     texts = [chunk['text'] for chunk in chunks]
     # Gets predictions for all texts at once.
-    predictions = modelQuestionAnswer.predict(texts, question, model_name)
+    predictions = modelQuestionAnswer.predict(texts, question, model_name, truncation, padding)
     for index, prediction in enumerate(predictions):
         chunk = chunks[index]
         prediction['id'] = chunk['id']
