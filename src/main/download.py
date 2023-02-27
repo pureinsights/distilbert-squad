@@ -1,6 +1,15 @@
 import os
-
+import logging
 from transformers import AutoTokenizer, AutoModelForQuestionAnswering, AutoModel
+
+#Define logger
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+sh = logging.StreamHandler()
+sh.setLevel(logging.DEBUG)
+sh.setFormatter(formatter)
+logger.addHandler(sh)
 
 
 def download_model(path, model_name):
@@ -18,10 +27,10 @@ def download_model(path, model_name):
     try:
         if not os.path.isdir(model_path):
             os.makedirs(model_path)  # Create the dir
-            print("Downloading model {} to {}".format(model_name, model_path))
+            logger.debug("Downloading model %s to %s", self.device,self.path)
             download_from_huggingface(model_name, model_path)
         else:
-            print("Model already exists: {}".format(model_path))
+            logger.debug("Model already exists: %s", model_path)
             model_exists = True
     except Exception as e:
         os.rmdir(model_path)
@@ -42,6 +51,7 @@ def download_from_huggingface_question_answers(model_name, model_path):
     model.save_pretrained(model_path)
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     tokenizer.save_pretrained(model_path)
+    logger.debug("download_from_huggingface_question_answers is completed")
 
 
 def download_from_huggingface_sentence_transformers(model_name, model_path):
@@ -56,6 +66,7 @@ def download_from_huggingface_sentence_transformers(model_name, model_path):
     model.save_pretrained(model_path)
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     tokenizer.save_pretrained(model_path)
+    logger.debug("download_from_huggingface_sentence_transformers is completed")
 
 
 def download_models(paths, models):
@@ -68,6 +79,7 @@ def download_models(paths, models):
     """
     models_downloaded = {}
     is_error_found = False
+    logger.debug("Download model method")
 
     for model_type, model_names in models.items():
         models_downloaded.update({model_type: []})
@@ -82,6 +94,7 @@ def download_models(paths, models):
             except Exception as e:
                 models_downloaded[model_type].append({"model": model_name, "status": str(e)})
                 is_error_found = True
+                logger.error("ERROR download_models: %s", e)
 
     return models_downloaded, is_error_found
 

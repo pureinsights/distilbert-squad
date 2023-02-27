@@ -21,6 +21,7 @@ ENV WORKERS=2
 ENV THREADS=1
 ENV TIMEOUT=30000
 ENV MODELS_PATH='./src/models'
+ENV LOG='DEBUG'
 
 # Copy local code to the container image.
 ENV APP_HOME /app
